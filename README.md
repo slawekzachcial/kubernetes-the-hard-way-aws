@@ -2,11 +2,9 @@
 
 ## Networking
 
-https://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/vpc-subnets-commands-example.html
-
 ### VPC
 
-```
+```sh
 VPC_ID=$(aws ec2 create-vpc \
   --cidr-block 10.240.0.0/24 \
   --output text --query 'Vpc.VpcId')
@@ -23,11 +21,11 @@ aws ec2 modify-vpc-attribute \
 
 ### DHCP Option Sets
 
-```
+```sh
 AWS_REGION=us-east-2
 ```
 
-```
+```sh
 DHCP_OPTION_SET_ID=$(aws ec2 create-dhcp-options \
   --dhcp-configuration \
     "Key=domain-name,Values=$AWS_REGION.compute.internal" \
@@ -43,7 +41,7 @@ aws ec2 associate-dhcp-options \
 
 ### Subnet
 
-```
+```sh
 SUBNET_ID=$(aws ec2 create-subnet \
   --vpc-id ${VPC_ID} \
   --cidr-block 10.240.0.0/24 \
@@ -55,7 +53,7 @@ aws ec2 create-tags \
 
 ### Internet Gateway
 
-```
+```sh
 INTERNET_GATEWAY_ID=$(aws ec2 create-internet-gateway \
   --output text --query 'InternetGateway.InternetGatewayId')
 aws ec2 create-tags \
@@ -68,7 +66,7 @@ aws ec2 attach-internet-gateway \
 
 ### Route Tables
 
-```
+```sh
 ROUTE_TABLE_ID=$(aws ec2 create-route-table \
   --vpc-id ${VPC_ID} \
   --output text --query 'RouteTable.RouteTableId')
@@ -86,9 +84,7 @@ aws ec2 create-route \
 
 ### Firewall Rules (aka Security Groups)
 
-https://docs.aws.amazon.com/cli/latest/userguide/cli-ec2-sg.html
-
-```
+```sh
 SECURITY_GROUP_ID=$(aws ec2 create-security-group \
   --group-name kubernetes \
   --description "Kubernetes security group" \
@@ -122,20 +118,15 @@ aws ec2 authorize-security-group-ingress \
   --cidr 0.0.0.0/0
 ```
 
-TODO: Is `authorize-security-group-ingress … --source-group …` needed?
-
 ### Kubernetes Public Address
 
-```
+```sh
 LOAD_BALANCER_ARN=$(aws elbv2 create-load-balancer \
   --name kubernetes \
   --subnets ${SUBNET_ID} \
   --scheme internet-facing \
   --type network \
   --output text --query 'LoadBalancers[].LoadBalancerArn')
-KUBERNETES_PUBLIC_ADDRESS=$(aws elbv2 describe-load-balancers \
-  --load-balancer-arns ${LOAD_BALANCER_ARN} \
-  --output text --query 'LoadBalancers[].DNSName')
 TARGET_GROUP_ARN=$(aws elbv2 create-target-group \
   --name kubernetes \
   --protocol TCP \
@@ -146,19 +137,25 @@ TARGET_GROUP_ARN=$(aws elbv2 create-target-group \
 aws elbv2 register-targets \
   --target-group-arn ${TARGET_GROUP_ARN} \
   --targets Id=10.240.0.1{0,1,2}
-LISTENER_ARN=$(aws elbv2 create-listener \
+aws elbv2 create-listener \
   --load-balancer-arn ${LOAD_BALANCER_ARN} \
   --protocol TCP \
   --port 6443 \
   --default-actions Type=forward,TargetGroupArn=${TARGET_GROUP_ARN} \
-  --output text --query 'Listeners[].ListenerArn')
+  --output text --query 'Listeners[].ListenerArn'
+```
+
+```sh
+KUBERNETES_PUBLIC_ADDRESS=$(aws elbv2 describe-load-balancers \
+  --load-balancer-arns ${LOAD_BALANCER_ARN} \
+  --output text --query 'LoadBalancers[].DNSName')
 ```
 
 ## Compute Instances
 
 ### Instance Image
 
-```
+```sh
 IMAGE_ID=$(aws ec2 describe-images --owners 099720109477 \
   --filters \
   'Name=root-device-type,Values=ebs' \
@@ -169,8 +166,9 @@ IMAGE_ID=$(aws ec2 describe-images --owners 099720109477 \
 
 ### SSH Key Pair
 
-```
+```sh
 mkdir -p ssh
+
 aws ec2 create-key-pair \
   --key-name kubernetes \
   --output text --query 'KeyMaterial' \
@@ -180,9 +178,9 @@ chmod 600 ssh/kubernetes.id_rsa
 
 ### Kubernetes Controllers
 
-Using `t2.micro` instead of `t2.small` as the former is covered by free tier
+Using `t2.micro` instead of `t2.small` as `t2.micro` is covered by AWS free tier
 
-```
+```sh
 for i in 0 1 2; do
   instance_id=$(aws ec2 run-instances \
     --associate-public-ip-address \
@@ -206,7 +204,7 @@ done
 
 ### Kubernetes Workers
 
-```
+```sh
 for i in 0 1 2; do
   instance_id=$(aws ec2 run-instances \
     --associate-public-ip-address \
@@ -231,27 +229,13 @@ done
 
 # Provisioning a CA and Generating TLS Certificates
 
-**IMPORTANT**:
-subject alternative names don't work properly using openssl and commands below
-
 ## Certificate Authority
 
-```
-mkdir tls
-```
-
-<!--
-```
+```sh
 mkdir -p tls
-openssl genrsa \
-  -out tls/ca-key.pem 2048
-openssl req -new -x509 \
-  -key tls/ca-key.pem -out tls/ca.pem \
-  -subj '/C=US/ST=Oregon/L=Portland/O=Kubernetes/OU=CA/CN=Kubernetes'
 ```
--->
 
-```
+```sh
 cat > tls/ca-config.json <<EOF
 {
   "signing": {
@@ -294,20 +278,7 @@ cfssl gencert -initca tls/ca-csr.json | cfssljson -bare tls/ca
 
 ### Admin Client Certificate
 
-<!--
-```
-openssl genrsa \
-  -out tls/admin-key.pem 2048
-openssl req -new \
-  -key tls/admin-key.pem -out tls/admin.csr \
-  -subj '/C=US/ST=Oregon/L=Portland/O=system:masters/OU=Kubernetes The Hard Way/CN=admin'
-openssl x509 -req \
-  -in tls/admin.csr -out tls/admin.pem \
-  -CA tls/ca.pem -CAkey tls/ca-key.pem -CAcreateserial
-```
--->
-
-```
+```sh
 cat > tls/admin-csr.json <<EOF
 {
   "CN": "admin",
@@ -337,41 +308,7 @@ cfssl gencert \
 
 ### Kubelet Client Certificates
 
-<!--
-```
-for instance in worker-0 worker-1 worker-2; do
-  openssl req -nodes \
-    -newkey rsa:2048 -keyout tls/${instance}-key.pem -out tls/${instance}.csr \
-    -subj "/C=US/ST=Oregon/L=Portland/O=system:nodes/OU=Kubernetes The Hard Way/CN=system:node:${instance}"
-
-  external_ip=$(aws ec2 describe-instances \
-    --filters "Name=tag:Name,Values=${instance}" \
-    --output text --query 'Reservations[].Instances[].PublicIpAddress')
-
-  internal_ip=$(aws ec2 describe-instances \
-    --filters "Name=tag:Name,Values=${instance}" \
-    --output text --query 'Reservations[].Instances[].PrivateIpAddress')
-
-  cat > tls/${instance}.extensions.cnf <<EOF
-basicConstraints=CA:FALSE
-subjectAltName=@my_subject_alt_names
-subjectKeyIdentifier = hash
-
-[ my_subject_alt_names ]
-DNS.1 = ${instance}
-DNS.2 = ${external_ip}
-DNS.3 = ${internal_ip}
-EOF
-
-  openssl x509 -req \
-    -in tls/${instance}.csr -out tls/${instance}.pem \
-    -extfile tls/${instance}.extensions.cnf \
-    -CA tls/ca.pem -CAkey tls/ca-key.pem -CAcreateserial
-done
-```
--->
-
-```
+```sh
 for i in 0 1 2; do
   instance="worker-${i}"
   instance_hostname="ip-10-240-0-2${i}"
@@ -414,20 +351,7 @@ done
 
 ### kube-proxy Client Certificate
 
-<!--
-```
-openssl genrsa \
-  -out tls/kube-proxy-key.pem 2048
-openssl req -new \
-  -key tls/kube-proxy-key.pem -out tls/kube-proxy.csr \
-  -subj '/C=US/ST=Oregon/L=Portland/O=system:node-proxier/OU=Kubernetes The Hard Way/CN=system:kube-proxy'
-openssl x509 -req \
-  -in tls/kube-proxy.csr -out tls/kube-proxy.pem \
-  -CA tls/ca.pem -CAkey tls/ca-key.pem -CAcreateserial
-```
--->
-
-```
+```sh
 cat > tls/kube-proxy-csr.json <<EOF
 {
   "CN": "system:kube-proxy",
@@ -457,43 +381,7 @@ cfssl gencert \
 
 ### Kubernetes API Server Certificate
 
-```
-KUBERNETES_PUBLIC_ADDRESS=$(aws elbv2 describe-load-balancers \
-  --load-balancer-arns ${LOAD_BALANCER_ARN} \
-  --output text --query 'LoadBalancers[0].DNSName')
-```
-
-<!--
-```
-openssl genrsa \
-  -out tls/kubernetes-key.pem 2048
-openssl req -new \
-  -key tls/kubernetes-key.pem -out tls/kubernetes.csr \
-  -subj '/C=US/ST=Oregon/L=Portland/O=Kubernetes/OU=Kubernetes The Hard Way/CN=kubernetes'
-
-cat > tls/kubernetes.extensions.cnf <<EOF
-basicConstraints=CA:FALSE
-subjectAltName=@my_subject_alt_names
-subjectKeyIdentifier = hash
-
-[ my_subject_alt_names ]
-DNS.1 = 10.32.0.1
-DNS.2 = 10.240.0.10
-DNS.3 = 10.240.0.11
-DNS.4 = 10.240.0.12
-DNS.5 = ${KUBERNETES_PUBLIC_ADDRESS}
-DNS.6 = 127.0.0.1
-DNS.7 = kubernetes.default
-EOF
-
-openssl x509 -req \
-  -in tls/kubernetes.csr -out tls/kubernetes.pem \
-  -extfile tls/kubernetes.extensions.cnf \
-  -CA tls/ca.pem -CAkey tls/ca-key.pem -CAcreateserial
-```
--->
-
-```
+```sh
 cat > tls/kubernetes-csr.json <<EOF
 {
   "CN": "kubernetes",
@@ -522,23 +410,9 @@ cfssl gencert \
   tls/kubernetes-csr.json | cfssljson -bare tls/kubernetes
 ```
 
-<!--
-NOT NEEDED - using Network Loadbalancer
-Import certificate and use it in load balancer
-
-```
-CERTIFICATE_ARN=$(aws acm import-certificate \
-  --certificate file://tls/kubernetes.pem \
-  --private-key file://tls/kubernetes-key.pem)
-aws elbv2 modify-listener \
-  --listener-arn ${LISTENER_ARN} \
-  --certificates "CertificateArn=${CERTIFICATE_ARN}"
-```
--->
-
 ## Distribute the Client and Server Certificates
 
-```
+```sh
 for instance in worker-0 worker-1 worker-2; do
   external_ip=$(aws ec2 describe-instances \
     --filters "Name=tag:Name,Values=${instance}" \
@@ -549,7 +423,7 @@ for instance in worker-0 worker-1 worker-2; do
 done
 ```
 
-```
+```sh
 for instance in controller-0 controller-1 controller-2; do
   external_ip=$(aws ec2 describe-instances \
     --filters "Name=tag:Name,Values=${instance}" \
@@ -566,7 +440,7 @@ done
 
 ### Kubernetes Public IP Address
 
-```
+```sh
 KUBERNETES_PUBLIC_ADDRESS=$(aws elbv2 describe-load-balancers \
   --load-balancer-arns ${LOAD_BALANCER_ARN} \
   --output text --query 'LoadBalancers[0].DNSName')
@@ -574,7 +448,7 @@ KUBERNETES_PUBLIC_ADDRESS=$(aws elbv2 describe-load-balancers \
 
 ### The kubelet Kubernetes Configuration Files
 
-```
+```sh
 mkdir -i cfg
 
 for i in 0 1 2; do
@@ -604,7 +478,7 @@ done
 
 ### The kube-proxy Kubernetes Configuration File
 
-```
+```sh
 bin/kubectl config set-cluster kubernetes-the-hard-way \
   --certificate-authority=tls/ca.pem \
   --embed-certs=true \
@@ -625,7 +499,7 @@ bin/kubectl config use-context default \
 
 ## Distribute the Kubernetes Configuration Files
 
-```
+```sh
 for instance in worker-0 worker-1 worker-2; do
   external_ip=$(aws ec2 describe-instances \
     --filters "Name=tag:Name,Values=${instance}" \
@@ -640,13 +514,13 @@ done
 
 ## The Encryption Key
 
-```
+```sh
 ENCRYPTION_KEY=$(head -c 32 /dev/urandom | base64)
 ```
 
 ## The Encryption Config File
 
-```
+```sh
 cat > cfg/encryption-config.yaml <<EOF
 kind: EncryptionConfig
 apiVersion: v1
@@ -662,7 +536,7 @@ resources:
 EOF
 ```
 
-```
+```sh
 for instance in controller-0 controller-1 controller-2; do
   external_ip=$(aws ec2 describe-instances \
     --filters "Name=tag:Name,Values=${instance}" \
@@ -673,18 +547,19 @@ done
 
 # Bootstrapping the etcd Cluster
 
-SSH to controller-0, controller-1, controller-2:
+SSH to controller-0, controller-1, controller-2 (replace `controller-N`
+accordingly):
 
-```
+```sh
 external_ip=$(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=controller-N" \
   --output text --query 'Reservations[].Instances[].PublicIpAddress')
 ssh -i ssh/kubernetes.id_rsa ubuntu@${external_ip}
 ```
 
-On each controller:
+Execute on each controller:
 
-```
+```sh
 wget -q --show-progress --https-only --timestamping \
   "https://github.com/coreos/etcd/releases/download/v3.2.11/etcd-v3.2.11-linux-amd64.tar.gz"
 tar -xvf etcd-v3.2.11-linux-amd64.tar.gz
@@ -694,15 +569,13 @@ sudo cp ca.pem kubernetes-key.pem kubernetes.pem /etc/etcd/
 INTERNAL_IP=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)
 ```
 
-etcd member unique name must be set manually as AWS uses a different hostname:
-
-```
+```sh
 ETCD_NAME=$(curl -s http://169.254.169.254/latest/user-data/ \
   | tr "|" "\n" | grep "^name" | cut -d"=" -f2)
 echo "${ETCD_NAME}"
 ```
 
-```
+```sh
 cat > etcd.service <<EOF
 [Unit]
 Description=etcd
@@ -738,23 +611,28 @@ sudo mv etcd.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable etcd
 sudo systemctl start etcd
+```
+
+```sh
 ETCDCTL_API=3 etcdctl member list
 ```
 
 # Bootstrapping the Kubernetes Control Plane
 
-SSH to controller-0, controller-1, controller-2:
+SSH to controller-0, controller-1, controller-2 (replace `controller-N`
+accordingly):
 
-```
+
+```sh
 external_ip=$(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=controller-N" \
   --output text --query 'Reservations[].Instances[].PublicIpAddress')
 ssh -i ssh/kubernetes.id_rsa ubuntu@${external_ip}
 ```
 
-On each controller:
+Execute on each controller:
 
-```
+```sh
 wget -q --show-progress --https-only --timestamping \
   "https://storage.googleapis.com/kubernetes-release/release/v1.9.0/bin/linux/amd64/kube-apiserver" \
   "https://storage.googleapis.com/kubernetes-release/release/v1.9.0/bin/linux/amd64/kube-controller-manager" \
@@ -859,21 +737,22 @@ sudo systemctl enable kube-apiserver kube-controller-manager kube-scheduler
 sudo systemctl start kube-apiserver kube-controller-manager kube-scheduler
 ```
 
-```
+```sh
 kubectl get componentstatuses
 ```
 
 ## RBAC for Kubelet Authorization
 
 SSH to controller-0:
-```
+
+```sh
 external_ip=$(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=controller-0" \
   --output text --query 'Reservations[].Instances[].PublicIpAddress')
 ssh -i ssh/kubernetes.id_rsa ubuntu@${external_ip}
 ```
 
-```
+```sh
 cat <<EOF | kubectl apply -f -
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
@@ -915,22 +794,22 @@ EOF
 
 ## The Kubernetes Frontend Load Balancer
 
-Nothing to do - already setup in previous section
+Nothing to do - already setup in [previous section](#kubernetes-public-address)
 
 # Bootstrapping the Kubernetes Worker Nodes
 
-SSH to worker-0, worker-1, worker-2:
+SSH to worker-0, worker-1, worker-2 (replace `worker-N` accordingly):
 
-```
+```sh
 external_ip=$(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=worker-N" \
   --output text --query 'Reservations[].Instances[].PublicIpAddress')
 ssh -i ssh/kubernetes.id_rsa ubuntu@${external_ip}
 ```
 
-On each worker:
+Execute on each worker:
 
-```
+```sh
 sudo apt-get update
 sudo apt-get -y install socat
 wget -q --show-progress --https-only --timestamping \
@@ -950,11 +829,15 @@ sudo tar -xvf cni-plugins-amd64-v0.6.0.tgz -C /opt/cni/bin/
 sudo tar -xvf cri-containerd-1.0.0-beta.1.linux-amd64.tar.gz -C /
 chmod +x kubectl kube-proxy kubelet
 sudo mv kubectl kube-proxy kubelet /usr/local/bin/
+```
 
+```sh
 POD_CIDR=$(curl -s http://169.254.169.254/latest/user-data/ \
   | tr "|" "\n" | grep "^pod-cidr" | cut -d"=" -f2)
 echo "${POD_CIDR}"
+```
 
+```sh
 cat > 10-bridge.conf <<EOF
 {
     "cniVersion": "0.3.1",
@@ -981,11 +864,15 @@ cat > 99-loopback.conf <<EOF
 EOF
 
 sudo mv 10-bridge.conf 99-loopback.conf /etc/cni/net.d/
+```
 
+```sh
 WORKER_NAME=$(curl -s http://169.254.169.254/latest/user-data/ \
   | tr "|" "\n" | grep "^name" | cut -d"=" -f2)
 echo "${WORKER_NAME}"
+```
 
+```sh
 sudo mv ${WORKER_NAME}-key.pem ${WORKER_NAME}.pem /var/lib/kubelet/
 sudo mv ${WORKER_NAME}.kubeconfig /var/lib/kubelet/kubeconfig
 sudo mv ca.pem /var/lib/kubernetes/
@@ -1052,15 +939,9 @@ sudo systemctl start containerd cri-containerd kubelet kube-proxy
 
 # Configuring kubectl for Remote Access
 
-```
-KUBERNETES_PUBLIC_ADDRESS=$(aws elbv2 describe-load-balancers \
-  --load-balancer-arns ${LOAD_BALANCER_ARN} \
-  --output text --query 'LoadBalancers[0].DNSName')
-```
+## The Admin Kubernetes Configuration File
 
-kubeconfig file suitable to authenticate as `admin` user:
-
-```
+```sh
 bin/kubectl config set-cluster kubernetes-the-hard-way \
   --certificate-authority=tls/ca.pem \
   --embed-certs=true \
@@ -1074,11 +955,21 @@ bin/kubectl config set-context kubernetes-the-hard-way \
 bin/kubectl config use-context kubernetes-the-hard-way
 ```
 
+## Verification
+
+```sh
+kubectl get componentstatuses
+```
+
+```sh
+kubectl get nodes
+```
+
 # Provisioning Pod Network Routes
 
 ## The Routing Table
 
-```
+```sh
 for instance in worker-0 worker-1 worker-2; do
   instance_id_ip="$(aws ec2 describe-instances \
     --filters "Name=tag:Name,Values=${instance}" \
@@ -1101,10 +992,10 @@ done
 
 ## Routes
 
-The last command above (`aws ec2 create-route`) creates the route for each
+The last command above (i.e. `aws ec2 create-route`) creates the route for each
 worker.
 
-```
+```sh
 aws ec2 describe-route-tables \
   --route-table-ids "${ROUTE_TABLE_ID}" \
   --query 'RouteTables[].Routes'
@@ -1112,16 +1003,21 @@ aws ec2 describe-route-tables \
 
 # Deploying the DNS Cluster Add-on
 
-Same commands as on
-https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/12-dns-addon.md
+## The DNS Cluster Add-On
+
+Run commands from [The DNS Cluster
+Add-On section](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/12-dns-addon.md)
 
 # Smoke Test
 
 ## Data Encryption
 
+Run commands from [Data Encryption
+section](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/13-smoke-test.md#data-encryption)
+
 Print a hexdump of the `kubernetes-the-hard-way` secret stored in etcd:
 
-```
+```sh
 external_ip=$(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=controller-0" \
   --output text --query 'Reservations[].Instances[].PublicIpAddress')
@@ -1130,9 +1026,37 @@ ssh -i ssh/kubernetes.id_rsa \
   "ETCDCTL_API=3 etcdctl get /registry/secrets/default/kubernetes-the-hard-way | hexdump -C"
 ```
 
-## Create the Node Port Firewall Rule
+## Deployments
 
-```
+Run commands from [Deployments
+section](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/13-smoke-test.md#deployments)
+
+### Port Forwarding
+
+Run commands from [Port Forwarding
+section](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/13-smoke-test.md#port-forwarding)
+
+### Logs
+
+Run commands from [Logs
+section](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/13-smoke-test.md#logs)
+
+### Exec
+
+Run commands from [Exec
+section](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/13-smoke-test.md#exec)
+
+## Services
+
+Run commands from [Services
+section](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/13-smoke-test.md#services)
+
+To create a firewall rule that allows remote access to the `nginx` node port:
+
+```sh
+NODE_PORT=$(kubectl get svc nginx \
+  --output=jsonpath='{range .spec.ports[0]}{.nodePort}')
+
 aws ec2 authorize-security-group-ingress \
   --group-id ${SECURITY_GROUP_ID} \
   --protocol tcp \
@@ -1140,10 +1064,10 @@ aws ec2 authorize-security-group-ingress \
   --cidr 0.0.0.0/0
 ```
 
-Grab the `EXTERNAL_IP` for one of the worker nodes to test nginx service
+To retrieve the external IP address of a worker instance:
 
-```
-external_ip=$(aws ec2 describe-instances \
+```sh
+EXTERNAL_IP=$(aws ec2 describe-instances \
   --filters "Name=tag:Name,Values=worker-0" \
   --output text --query 'Reservations[].Instances[].PublicIpAddress')
 ```
@@ -1152,7 +1076,7 @@ external_ip=$(aws ec2 describe-instances \
 
 ## Compute Instances
 
-```
+```sh
 aws ec2 terminate-instances \
   --instance-ids \
     $(aws ec2 describe-instances \
@@ -1164,7 +1088,7 @@ aws ec2 delete-key-pair \
 
 ## Networking
 
-```
+```sh
 aws elbv2 delete-load-balancer \
   --load-balancer-arn "${LOAD_BALANCER_ARN}"
 aws elbv2 delete-target-group \
