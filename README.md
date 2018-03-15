@@ -1,4 +1,60 @@
+# Kubernetes The Hard Way - AWS
+
+This page is based on [Kubernetes The Hard
+Way](https://github.com/kelseyhightower/kubernetes-the-hard-way/) guide. It
+compiles AWS CLI commands, mainly from revision
+[8185017](https://github.com/kelseyhightower/kubernetes-the-hard-way/tree/818501707e418fc4d6e6aedef8395ca368e3097e)
+of the guide (right before AWS support has been removed), with small
+adjustments. Best is to follow the original guide side-by-side with this page as
+the former providers background and context and this page contains only the
+commands.
+
+The intent of this page is similar to the original guide. My motivation to
+compile it has been to learn more about AWS and Kubernetes.
+
+## Labs
+
+* [Prerequisites](#prerequisites)
+* [Installing the Client Tools](#installing-the-client-tools)
+* [Provisioning Compute Resources](#provisioning-compute-resources)
+* [Provisioning a CA and Generating TLS Certificates](#provisioning-a-ca-and-generating-tls-certificates)
+* [Generating Kubernetes Authentication Files for Authentication](#generating-kubernetes-authentication-files-for-authentication)
+* [Generating the Data Encryption Config and Key](#generating-the-data-encryption-config-and-key)
+* [Bootstrapping the etcd Cluster](#bootstrapping-the-etcd-cluster)
+* [Bootstrapping the Kubernetes Control Plane](#bootstrapping-the-kubernetes-control-plane)
+* [Bootstrapping the Kubernetes Worker Nodes](#bootstrapping-the-kubernetes-worker-nodes)
+* [Configuring kubectl for Remote Access](#configuring-kubectl-for-remote-access)
+* [Provisioning Pod Network Routes](#provisioning-pod-network-routes)
+* [Deploying the DNS Cluster Add-on](#deploying-the-dns-cluster-add-on)
+* [Smoke Test](#smoke-test)
+* [Cleaning Up](#cleaning-up)
+
+# Prerequisites
+
+## Amazon Web Services
+
+The commands below deploy Kubernetes cluster into [Amazon Web
+Services](https://aws.amazon.com). I was able to run them using [AWS Free
+Tier](https://aws.amazon.com/free/), at no cost.
+
+## Amazon Web Services CLI
+
+Install AWS CLI following instructions at https://aws.amazon.com/cli/.
+
+# Installing the Client Tools
+
+Follow the [guide
+instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/02-client-tools.md).
+
+**OS X**: If you run into issues with `cfssl` install it using brew:
+
+```sh
+brew install cfssl
+```
+
 # Provisioning Compute Resources
+
+[Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/03-compute-resources.md)
 
 ## Networking
 
@@ -226,8 +282,9 @@ for i in 0 1 2; do
 done
 ```
 
-
 # Provisioning a CA and Generating TLS Certificates
+
+[Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/04-certificate-authority.md)
 
 ## Certificate Authority
 
@@ -436,6 +493,8 @@ done
 
 # Generating Kubernetes Authentication Files for Authentication
 
+[Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/05-kubernetes-configuration-files.md)
+
 ## Client Authentication Configs
 
 ### Kubernetes Public IP Address
@@ -512,6 +571,8 @@ done
 
 # Generating the Data Encryption Config and Key
 
+[Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/06-data-encryption-keys.md)
+
 ## The Encryption Key
 
 ```sh
@@ -546,6 +607,8 @@ done
 ```
 
 # Bootstrapping the etcd Cluster
+
+[Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/07-bootstrapping-etcd.md)
 
 SSH to controller-0, controller-1, controller-2 (replace `controller-N`
 accordingly):
@@ -618,6 +681,8 @@ ETCDCTL_API=3 etcdctl member list
 ```
 
 # Bootstrapping the Kubernetes Control Plane
+
+[Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/08-bootstrapping-kubernetes-controllers.md)
 
 SSH to controller-0, controller-1, controller-2 (replace `controller-N`
 accordingly):
@@ -798,6 +863,8 @@ Nothing to do - already setup in [previous section](#kubernetes-public-address)
 
 # Bootstrapping the Kubernetes Worker Nodes
 
+[Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/09-bootstrapping-kubernetes-workers.md)
+
 SSH to worker-0, worker-1, worker-2 (replace `worker-N` accordingly):
 
 ```sh
@@ -939,6 +1006,8 @@ sudo systemctl start containerd cri-containerd kubelet kube-proxy
 
 # Configuring kubectl for Remote Access
 
+[Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/10-configuring-kubectl.md)
+
 ## The Admin Kubernetes Configuration File
 
 ```sh
@@ -966,6 +1035,8 @@ kubectl get nodes
 ```
 
 # Provisioning Pod Network Routes
+
+[Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/11-pod-network-routes.md)
 
 ## The Routing Table
 
@@ -1073,6 +1144,8 @@ EXTERNAL_IP=$(aws ec2 describe-instances \
 ```
 
 # Cleaning Up
+
+[Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/14-cleanup.md)
 
 ## Compute Instances
 
