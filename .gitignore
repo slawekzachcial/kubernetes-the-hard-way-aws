@@ -2,3 +2,6 @@ bin
 cfg
 ssh
 tls
+terraform/ssh
+terraform/.terraform
+terraform/terraform.tfstate*
