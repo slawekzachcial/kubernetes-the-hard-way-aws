@@ -1,7 +1,10 @@
-bin
-cfg
-ssh
-tls
-terraform/ssh
-terraform/.terraform
-terraform/terraform.tfstate*
+/bin/
+/cfg/
+/ssh/
+/tls/
+/terraform/ssh/
+/terraform/.terraform/
+/terraform/terraform.tfstate*
+/terraform/tls/*.pem
+/terraform/tls/*.csr
+/terraform/tls/worker-*-csr.json
