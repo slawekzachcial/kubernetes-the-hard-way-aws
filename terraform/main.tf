@@ -132,11 +132,14 @@ resource "aws_lb_listener" "k8s" {
   }
 }
 
-# generate key pair:
-# mkdir ssh && ssh-keygen -b 2048 -t rsa -N '' -f ssh/kubernetes.id_rsa
+resource "tls_private_key" "k8s" {
+  algorithm = "RSA"
+  rsa_bits  = "2048"
+}
+
 resource "aws_key_pair" "k8s" {
   key_name   = "kubernetes"
-  public_key = "${file("ssh/kubernetes.id_rsa.pub")}"
+  public_key = "${tls_private_key.k8s.public_key_openssh}"
 }
 
 data "aws_ami" "ubuntu" {
