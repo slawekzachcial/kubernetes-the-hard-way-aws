@@ -508,7 +508,7 @@ KUBERNETES_PUBLIC_ADDRESS=$(aws elbv2 describe-load-balancers \
 ### The kubelet Kubernetes Configuration Files
 
 ```sh
-mkdir -i cfg
+mkdir -p cfg
 
 for i in 0 1 2; do
   instance="worker-${i}"
