@@ -693,6 +693,29 @@ bin/kubectl config set-context default \
 bin/kubectl config use-context default --kubeconfig=cfg/kube-scheduler.kubeconfig
 ```
 
+### The admin Kubernetes Configuration File
+
+```sh
+bin/kubectl config set-cluster kubernetes-the-hard-way \
+  --certificate-authority=tls/ca.pem \
+  --embed-certs=true \
+  --server=https://127.0.0.1:6443 \
+  --kubeconfig=cfg/admin.kubeconfig
+
+bin/kubectl config set-credentials admin \
+  --client-certificate=tls/admin.pem \
+  --client-key=tls/admin-key.pem \
+  --embed-certs=true \
+  --kubeconfig=cfg/admin.kubeconfig
+
+bin/kubectl config set-context default \
+  --cluster=kubernetes-the-hard-way \
+  --user=admin \
+  --kubeconfig=cfg/admin.kubeconfig
+
+bin/kubectl config use-context default --kubeconfig=cfg/admin.kubeconfig
+```
+
 ## Distribute the Kubernetes Configuration Files
 
 ```sh
