@@ -670,6 +670,29 @@ bin/kubectl config set-context default \
 bin/kubectl config use-context default --kubeconfig=cfg/kube-controller-manager.kubeconfig
 ```
 
+### The kube-scheduler Kubernetes Configuration File
+
+```sh
+bin/kubectl config set-cluster kubernetes-the-hard-way \
+  --certificate-authority=tls/ca.pem \
+  --embed-certs=true \
+  --server=https://127.0.0.1:6443 \
+  --kubeconfig=cfg/kube-scheduler.kubeconfig
+
+bin/kubectl config set-credentials system:kube-scheduler \
+  --client-certificate=tls/kube-scheduler.pem \
+  --client-key=tls/kube-scheduler-key.pem \
+  --embed-certs=true \
+  --kubeconfig=cfg/kube-scheduler.kubeconfig
+
+bin/kubectl config set-context default \
+  --cluster=kubernetes-the-hard-way \
+  --user=system:kube-scheduler \
+  --kubeconfig=cfg/kube-scheduler.kubeconfig
+
+bin/kubectl config use-context default --kubeconfig=cfg/kube-scheduler.kubeconfig
+```
+
 ## Distribute the Kubernetes Configuration Files
 
 ```sh
