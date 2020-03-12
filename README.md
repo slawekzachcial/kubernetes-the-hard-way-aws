@@ -729,6 +729,17 @@ for instance in worker-0 worker-1 worker-2; do
 done
 ```
 
+```sh
+for instance in controller-0 controller-1 controller-2; do
+  external_ip=$(aws ec2 describe-instances \
+    --filters "Name=tag:Name,Values=${instance}" \
+    --output text --query 'Reservations[].Instances[].PublicIpAddress')
+  scp -i ssh/kubernetes.id_rsa \
+    cfg/admin.kubeconfig cfg/kube-controller-manager.kubeconfig cfg/kube-scheduler.kubeconfig \
+    ubuntu@${external_ip}:~/
+done
+```
+
 # Generating the Data Encryption Config and Key
 
 [Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/06-data-encryption-keys.md)
