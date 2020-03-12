@@ -527,6 +527,36 @@ cfssl gencert \
   tls/kubernetes-csr.json | cfssljson -bare tls/kubernetes
 ```
 
+### The Service Account Key Pair
+
+```sh
+cat > tls/service-account-csr.json <<EOF
+{
+  "CN": "service-accounts",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "US",
+      "L": "Portland",
+      "O": "Kubernetes",
+      "OU": "Kubernetes The Hard Way",
+      "ST": "Oregon"
+    }
+  ]
+}
+EOF
+
+cfssl gencert \
+  -ca=tls/ca.pem \
+  -ca-key=tls/ca-key.pem \
+  -config=tls/ca-config.json \
+  -profile=kubernetes \
+  tls/service-account-csr.json | cfssljson -bare tls/service-account
+```
+
 ## Distribute the Client and Server Certificates
 
 ```sh
