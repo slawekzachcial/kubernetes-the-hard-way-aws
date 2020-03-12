@@ -406,6 +406,36 @@ EOF
 done
 ```
 
+### kube-controller-manager Client Certificate
+
+```sh
+cat > tls/kube-controller-manager-csr.json <<EOF
+{
+  "CN": "system:kube-controller-manager",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "US",
+      "L": "Portland",
+      "O": "system:kube-controller-manager",
+      "OU": "Kubernetes The Hard Way",
+      "ST": "Oregon"
+    }
+  ]
+}
+EOF
+
+cfssl gencert \
+  -ca=tls/ca.pem \
+  -ca-key=tls/ca-key.pem \
+  -config=tls/ca-config.json \
+  -profile=kubernetes \
+  tls/kube-controller-manager-csr.json | cfssljson -bare tls/kube-controller-manager
+```
+
 ### kube-proxy Client Certificate
 
 ```sh
