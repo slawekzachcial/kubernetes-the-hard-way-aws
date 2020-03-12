@@ -577,6 +577,7 @@ for instance in controller-0 controller-1 controller-2; do
     --output text --query 'Reservations[].Instances[].PublicIpAddress')
   scp -i ssh/kubernetes.id_rsa \
     tls/ca.pem tls/ca-key.pem tls/kubernetes-key.pem tls/kubernetes.pem \
+    tls/service-account-key.pem tls/service-account.pem \
     ubuntu@${external_ip}:~/
 done
 ```
