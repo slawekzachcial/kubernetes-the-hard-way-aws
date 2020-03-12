@@ -466,6 +466,36 @@ cfssl gencert \
   tls/kube-proxy-csr.json | cfssljson -bare tls/kube-proxy
 ```
 
+### The Scheduler Client Certificate
+
+```sh
+cat > tls/kube-scheduler-csr.json <<EOF
+{
+  "CN": "system:kube-scheduler",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "US",
+      "L": "Portland",
+      "O": "system:kube-scheduler",
+      "OU": "Kubernetes The Hard Way",
+      "ST": "Oregon"
+    }
+  ]
+}
+EOF
+
+cfssl gencert \
+  -ca=tls/ca.pem \
+  -ca-key=tls/ca-key.pem \
+  -config=tls/ca-config.json \
+  -profile=kubernetes \
+  tls/kube-scheduler-csr.json | cfssljson -bare tls/kube-scheduler
+```
+
 ### Kubernetes API Server Certificate
 
 ```sh
