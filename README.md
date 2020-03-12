@@ -647,6 +647,29 @@ bin/kubectl config use-context default \
   --kubeconfig=cfg/kube-proxy.kubeconfig
 ```
 
+### The kube-controller-manager Kubernetes Configuration File
+
+```sh
+bin/kubectl config set-cluster kubernetes-the-hard-way \
+  --certificate-authority=tls/ca.pem \
+  --embed-certs=true \
+  --server=https://127.0.0.1:6443 \
+  --kubeconfig=cfg/kube-controller-manager.kubeconfig
+
+bin/kubectl config set-credentials system:kube-controller-manager \
+  --client-certificate=tls/kube-controller-manager.pem \
+  --client-key=tls/kube-controller-manager-key.pem \
+  --embed-certs=true \
+  --kubeconfig=cfg/kube-controller-manager.kubeconfig
+
+bin/kubectl config set-context default \
+  --cluster=kubernetes-the-hard-way \
+  --user=system:kube-controller-manager \
+  --kubeconfig=cfg/kube-controller-manager.kubeconfig
+
+bin/kubectl config use-context default --kubeconfig=cfg/kube-controller-manager.kubeconfig
+```
+
 ## Distribute the Kubernetes Configuration Files
 
 ```sh
