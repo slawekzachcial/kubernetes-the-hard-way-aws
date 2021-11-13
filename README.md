@@ -406,6 +406,36 @@ EOF
 done
 ```
 
+### kube-controller-manager Client Certificate
+
+```sh
+cat > tls/kube-controller-manager-csr.json <<EOF
+{
+  "CN": "system:kube-controller-manager",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "US",
+      "L": "Portland",
+      "O": "system:kube-controller-manager",
+      "OU": "Kubernetes The Hard Way",
+      "ST": "Oregon"
+    }
+  ]
+}
+EOF
+
+cfssl gencert \
+  -ca=tls/ca.pem \
+  -ca-key=tls/ca-key.pem \
+  -config=tls/ca-config.json \
+  -profile=kubernetes \
+  tls/kube-controller-manager-csr.json | cfssljson -bare tls/kube-controller-manager
+```
+
 ### kube-proxy Client Certificate
 
 ```sh
@@ -434,6 +464,36 @@ cfssl gencert \
   -config=tls/ca-config.json \
   -profile=kubernetes \
   tls/kube-proxy-csr.json | cfssljson -bare tls/kube-proxy
+```
+
+### The Scheduler Client Certificate
+
+```sh
+cat > tls/kube-scheduler-csr.json <<EOF
+{
+  "CN": "system:kube-scheduler",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "US",
+      "L": "Portland",
+      "O": "system:kube-scheduler",
+      "OU": "Kubernetes The Hard Way",
+      "ST": "Oregon"
+    }
+  ]
+}
+EOF
+
+cfssl gencert \
+  -ca=tls/ca.pem \
+  -ca-key=tls/ca-key.pem \
+  -config=tls/ca-config.json \
+  -profile=kubernetes \
+  tls/kube-scheduler-csr.json | cfssljson -bare tls/kube-scheduler
 ```
 
 ### Kubernetes API Server Certificate
@@ -467,6 +527,36 @@ cfssl gencert \
   tls/kubernetes-csr.json | cfssljson -bare tls/kubernetes
 ```
 
+### The Service Account Key Pair
+
+```sh
+cat > tls/service-account-csr.json <<EOF
+{
+  "CN": "service-accounts",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "US",
+      "L": "Portland",
+      "O": "Kubernetes",
+      "OU": "Kubernetes The Hard Way",
+      "ST": "Oregon"
+    }
+  ]
+}
+EOF
+
+cfssl gencert \
+  -ca=tls/ca.pem \
+  -ca-key=tls/ca-key.pem \
+  -config=tls/ca-config.json \
+  -profile=kubernetes \
+  tls/service-account-csr.json | cfssljson -bare tls/service-account
+```
+
 ## Distribute the Client and Server Certificates
 
 ```sh
@@ -487,6 +577,7 @@ for instance in controller-0 controller-1 controller-2; do
     --output text --query 'Reservations[].Instances[].PublicIpAddress')
   scp -i ssh/kubernetes.id_rsa \
     tls/ca.pem tls/ca-key.pem tls/kubernetes-key.pem tls/kubernetes.pem \
+    tls/service-account-key.pem tls/service-account.pem \
     ubuntu@${external_ip}:~/
 done
 ```
@@ -556,6 +647,75 @@ bin/kubectl config use-context default \
   --kubeconfig=cfg/kube-proxy.kubeconfig
 ```
 
+### The kube-controller-manager Kubernetes Configuration File
+
+```sh
+bin/kubectl config set-cluster kubernetes-the-hard-way \
+  --certificate-authority=tls/ca.pem \
+  --embed-certs=true \
+  --server=https://127.0.0.1:6443 \
+  --kubeconfig=cfg/kube-controller-manager.kubeconfig
+
+bin/kubectl config set-credentials system:kube-controller-manager \
+  --client-certificate=tls/kube-controller-manager.pem \
+  --client-key=tls/kube-controller-manager-key.pem \
+  --embed-certs=true \
+  --kubeconfig=cfg/kube-controller-manager.kubeconfig
+
+bin/kubectl config set-context default \
+  --cluster=kubernetes-the-hard-way \
+  --user=system:kube-controller-manager \
+  --kubeconfig=cfg/kube-controller-manager.kubeconfig
+
+bin/kubectl config use-context default --kubeconfig=cfg/kube-controller-manager.kubeconfig
+```
+
+### The kube-scheduler Kubernetes Configuration File
+
+```sh
+bin/kubectl config set-cluster kubernetes-the-hard-way \
+  --certificate-authority=tls/ca.pem \
+  --embed-certs=true \
+  --server=https://127.0.0.1:6443 \
+  --kubeconfig=cfg/kube-scheduler.kubeconfig
+
+bin/kubectl config set-credentials system:kube-scheduler \
+  --client-certificate=tls/kube-scheduler.pem \
+  --client-key=tls/kube-scheduler-key.pem \
+  --embed-certs=true \
+  --kubeconfig=cfg/kube-scheduler.kubeconfig
+
+bin/kubectl config set-context default \
+  --cluster=kubernetes-the-hard-way \
+  --user=system:kube-scheduler \
+  --kubeconfig=cfg/kube-scheduler.kubeconfig
+
+bin/kubectl config use-context default --kubeconfig=cfg/kube-scheduler.kubeconfig
+```
+
+### The admin Kubernetes Configuration File
+
+```sh
+bin/kubectl config set-cluster kubernetes-the-hard-way \
+  --certificate-authority=tls/ca.pem \
+  --embed-certs=true \
+  --server=https://127.0.0.1:6443 \
+  --kubeconfig=cfg/admin.kubeconfig
+
+bin/kubectl config set-credentials admin \
+  --client-certificate=tls/admin.pem \
+  --client-key=tls/admin-key.pem \
+  --embed-certs=true \
+  --kubeconfig=cfg/admin.kubeconfig
+
+bin/kubectl config set-context default \
+  --cluster=kubernetes-the-hard-way \
+  --user=admin \
+  --kubeconfig=cfg/admin.kubeconfig
+
+bin/kubectl config use-context default --kubeconfig=cfg/admin.kubeconfig
+```
+
 ## Distribute the Kubernetes Configuration Files
 
 ```sh
@@ -565,6 +725,17 @@ for instance in worker-0 worker-1 worker-2; do
     --output text --query 'Reservations[].Instances[].PublicIpAddress')
   scp -i ssh/kubernetes.id_rsa \
     cfg/${instance}.kubeconfig cfg/kube-proxy.kubeconfig \
+    ubuntu@${external_ip}:~/
+done
+```
+
+```sh
+for instance in controller-0 controller-1 controller-2; do
+  external_ip=$(aws ec2 describe-instances \
+    --filters "Name=tag:Name,Values=${instance}" \
+    --output text --query 'Reservations[].Instances[].PublicIpAddress')
+  scp -i ssh/kubernetes.id_rsa \
+    cfg/admin.kubeconfig cfg/kube-controller-manager.kubeconfig cfg/kube-scheduler.kubeconfig \
     ubuntu@${external_ip}:~/
 done
 ```
@@ -624,9 +795,9 @@ Execute on each controller:
 
 ```sh
 wget -q --show-progress --https-only --timestamping \
-  "https://github.com/coreos/etcd/releases/download/v3.2.11/etcd-v3.2.11-linux-amd64.tar.gz"
-tar -xvf etcd-v3.2.11-linux-amd64.tar.gz
-sudo mv etcd-v3.2.11-linux-amd64/etcd* /usr/local/bin/
+  "https://github.com/etcd-io/etcd/releases/download/v3.4.4/etcd-v3.4.4-linux-amd64.tar.gz"
+tar -xvf etcd-v3.4.4-linux-amd64.tar.gz
+sudo mv etcd-v3.4.4-linux-amd64/etcd* /usr/local/bin/
 sudo mkdir -p /etc/etcd /var/lib/etcd
 sudo cp ca.pem kubernetes-key.pem kubernetes.pem /etc/etcd/
 INTERNAL_IP=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)
