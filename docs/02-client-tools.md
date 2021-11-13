@@ -11,17 +11,16 @@ Since we install binaries into the local `bin` folder, instead of running
 `sudo mv cfssl cfssljson /usr/local/bin/`, run:
 
 ```sh
-{
 mkdir -p bin
 
 mv cfssl cfssljson bin
-}
 ```
 
-Note that if you are on MacOS and you installed cfssl using Homebrew, `cfssl`
-and `cfssljson` have been copied into `/usr/local/bin` rather than into the local
-`bin` folder. Therefore when using them later in this guide, instead of `bin/cfssl`
-and `bin/cfssljson`, simply run `cfssl` and `cfssljson`.
+> Note:
+> If you are on MacOS and you installed cfssl using Homebrew, `cfssl`
+> and `cfssljson` have been copied into `/usr/local/bin` rather than into the
+> local `bin` folder. Therefore when using them later in this guide, instead of
+> `bin/cfssl` and `bin/cfssljson`, simply run `cfssl` and `cfssljson`.
 
 ### Verification
 
@@ -42,11 +41,9 @@ Since we install binaries into the local `bin` folder, instead of running
 `sudo mv kubectl /usr/local/bin`, run:
 
 ```sh
-{
 mkdir -p bin
 
 mv kubectl bin
-}
 ```
 
 ### Verification

@@ -28,10 +28,6 @@ export AWS_DEFAULT_REGION=us-east-2
 This guide will provision AWS resources in `us-east-2` region. If you decide
 to use a different AWS region change the value of the environment variable above.
 
-Note that if you decide to use `us-east-1` make sure to update domain name from
-`${AWS_DEFAULT_REGION}.compute.internal` to `${AWS_DEFAULT_REGION}.ec2.internal`
-when [setting VPC DHCP options](03-compute-resources.md#dhcp-option-sets).
-
 ## Running Commands in Parallel with tmux
 
 To save some typing you may want to check [this hint](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/01-prerequisites.md#running-commands-in-parallel-with-tmux)
