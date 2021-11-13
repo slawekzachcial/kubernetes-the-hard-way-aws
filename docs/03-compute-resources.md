@@ -77,7 +77,7 @@ aws ec2 attach-internet-gateway \
   --vpc-id ${VPC_ID}
 ```
 
-Create Route Tables:
+Create Route Table:
 
 ```sh
 ROUTE_TABLE_ID=$(aws ec2 create-route-table \
@@ -98,7 +98,7 @@ aws ec2 create-route \
   --gateway-id ${INTERNET_GATEWAY_ID}
 ```
 
-### Firewall Rules (aka Security Groups)
+### Firewall Rules (aka Security Group)
 
 ```sh
 SECURITY_GROUP_ID=$(aws ec2 create-security-group \
@@ -166,7 +166,27 @@ Output:
 +------------+-------------+-----------+------------------+
 ```
 
-### Kubernetes Public Address
+### Kubernetes Public IP Address
+
+```sh
+ALLOCATION_ID=$(aws ec2 allocate-address \
+  --domain vpc \
+  --output text --query 'AllocationId')
+
+aws ec2 create-tags \
+  --resources ${ALLOCATION_ID} \
+  --tags Key=Name,Value=kubernetes-the-hard-way
+```
+
+Verify the address was created in your default region:
+
+```sh
+aws ec2 describe-addresses --allocation-ids ${ALLOCATION_ID}
+```
+
+### Kubernetes Public Address <-- TO BE MOVED
+
+> TODO: move the LB creation section to where it belongs as per original guide
 
 ```sh
 LOAD_BALANCER_ARN=$(aws elbv2 create-load-balancer \
@@ -208,8 +228,9 @@ IMAGE_ID=$(aws ec2 describe-images --owners 099720109477 \
   --filters \
   'Name=root-device-type,Values=ebs' \
   'Name=architecture,Values=x86_64' \
-  'Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*' \
-  | jq -r '.Images|sort_by(.Name)[-1]|.ImageId')
+  'Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*' \
+  --output text --query 'Images[].[Name,ImageId]' \
+  | sort -r | head -n1 | cut -f2)
 ```
 
 ### SSH Key Pair
