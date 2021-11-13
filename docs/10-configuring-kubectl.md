@@ -28,4 +28,4 @@ kubectl get componentstatuses
 kubectl get nodes
 ```
 
-Next: [Provisioning Pod Network Routes](docs/11-pod-network-routes.md)
+Next: [Provisioning Pod Network Routes](11-pod-network-routes.md)

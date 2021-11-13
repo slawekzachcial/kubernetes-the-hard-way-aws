@@ -141,4 +141,4 @@ sudo systemctl enable containerd cri-containerd kubelet kube-proxy
 sudo systemctl start containerd cri-containerd kubelet kube-proxy
 ```
 
-Next: [Configuring kubectl for Remote Access](docs/10-configuring-kubectl.md)
+Next: [Configuring kubectl for Remote Access](10-configuring-kubectl.md)

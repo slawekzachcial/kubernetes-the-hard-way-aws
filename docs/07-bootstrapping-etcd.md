@@ -72,4 +72,4 @@ sudo systemctl start etcd
 ETCDCTL_API=3 etcdctl member list
 ```
 
-Next: [Bootstrapping the Kubernetes Control Plane](docs/08-bootstrapping-kubernetes-controllers.md)
+Next: [Bootstrapping the Kubernetes Control Plane](08-bootstrapping-kubernetes-controllers.md)

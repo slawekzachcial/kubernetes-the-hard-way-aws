@@ -228,4 +228,4 @@ for i in 0 1 2; do
 done
 ```
 
-Next: [Provisioning a CA and Generating TLS Certificates](docs/04-certificate-authority.md)
+Next: [Provisioning a CA and Generating TLS Certificates](04-certificate-authority.md)

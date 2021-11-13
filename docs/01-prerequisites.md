@@ -10,4 +10,4 @@ Tier](https://aws.amazon.com/free/), at no cost.
 
 Install AWS CLI following instructions at https://aws.amazon.com/cli/.
 
-Next: [Installing the Client Tools](docs/02-client-tools.md)
+Next: [Installing the Client Tools](02-client-tools.md)

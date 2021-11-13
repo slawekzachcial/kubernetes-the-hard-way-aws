@@ -298,4 +298,4 @@ for instance in controller-0 controller-1 controller-2; do
 done
 ```
 
-Next: [Generating Kubernetes Configuration Files for Authentication](docs/05-kubernetes-configuration-files.md)
+Next: [Generating Kubernetes Configuration Files for Authentication](05-kubernetes-configuration-files.md)

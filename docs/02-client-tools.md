@@ -9,4 +9,4 @@ instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/ma
 brew install cfssl
 ```
 
-Next [Provisioning Compute Resources](docs/03-compute-resources.md)
+Next [Provisioning Compute Resources](03-compute-resources.md)

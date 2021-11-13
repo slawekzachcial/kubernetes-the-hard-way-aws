@@ -36,4 +36,4 @@ aws ec2 describe-route-tables \
   --query 'RouteTables[].Routes'
 ```
 
-Next: [Deploying the DNS Cluster Add-on](docs/12-dns-addon.md)
+Next: [Deploying the DNS Cluster Add-on](12-dns-addon.md)

@@ -62,4 +62,4 @@ EXTERNAL_IP=$(aws ec2 describe-instances \
   --output text --query 'Reservations[].Instances[].PublicIpAddress')
 ```
 
-Next: [Cleaning Up](docs/14-cleanup.md)
+Next: [Cleaning Up](14-cleanup.md)

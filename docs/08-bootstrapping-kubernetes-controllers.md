@@ -178,4 +178,4 @@ EOF
 
 Nothing to do - already setup in [previous section](#kubernetes-public-address)
 
-Next: [Bootstrapping the Kubernetes Worker Nodes](docs/09-bootstrapping-kubernetes-workers.md)
+Next: [Bootstrapping the Kubernetes Worker Nodes](09-bootstrapping-kubernetes-workers.md)
