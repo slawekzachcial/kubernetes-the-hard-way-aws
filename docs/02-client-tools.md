@@ -23,6 +23,16 @@ and `cfssljson` have been copied into `/usr/local/bin` rather than into the loca
 `bin` folder. Therefore when using them later in this guide, instead of `bin/cfssl`
 and `bin/cfssljson`, simply run `cfssl` and `cfssljson`.
 
+### Verification
+
+```sh
+bin/cfssl version
+```
+
+```sh
+bin/cfssljson --version
+```
+
 ## Install kubectl
 
 Follow the [guide
@@ -37,6 +47,12 @@ mkdir -p bin
 
 mv kubectl bin
 }
+```
+
+### Verification
+
+```sh
+bin/kubectl version --client
 ```
 
 Next [Provisioning Compute Resources](03-compute-resources.md)
