@@ -242,7 +242,7 @@ IMAGE_ID=$(aws ec2 describe-images --owners 099720109477 \
   'Name=architecture,Values=x86_64' \
   'Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*' \
   --query 'sort_by(Images[],&Name)[-1].ImageId' \
-  --output text --query 'sort_by(Images[],&Name)[-1].ImageId')
+  --output text)
 
 echo ${IMAGE_ID}
 ```
