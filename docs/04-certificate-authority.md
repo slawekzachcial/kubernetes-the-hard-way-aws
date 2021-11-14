@@ -44,12 +44,12 @@ cat > tls/ca-csr.json <<EOF
 }
 EOF
 
-cfssl gencert -initca tls/ca-csr.json | cfssljson -bare tls/ca
+bin/cfssl gencert -initca tls/ca-csr.json | bin/cfssljson -bare tls/ca
 ```
 
 ## Client and Server Certificates
 
-### Admin Client Certificate
+### The Admin Client Certificate
 
 ```sh
 cat > tls/admin-csr.json <<EOF
@@ -71,15 +71,15 @@ cat > tls/admin-csr.json <<EOF
 }
 EOF
 
-cfssl gencert \
+bin/cfssl gencert \
   -ca=tls/ca.pem \
   -ca-key=tls/ca-key.pem \
   -config=tls/ca-config.json \
   -profile=kubernetes \
-  tls/admin-csr.json | cfssljson -bare tls/admin
+  tls/admin-csr.json | bin/cfssljson -bare tls/admin
 ```
 
-### Kubelet Client Certificates
+### The Kubelet Client Certificates
 
 ```sh
 for i in 0 1 2; do
@@ -112,17 +112,17 @@ EOF
     --filters "Name=tag:Name,Values=${instance}" \
     --output text --query 'Reservations[].Instances[].PrivateIpAddress')
 
-  cfssl gencert \
+  bin/cfssl gencert \
     -ca=tls/ca.pem \
     -ca-key=tls/ca-key.pem \
     -config=tls/ca-config.json \
     -hostname=${instance_hostname},${external_ip},${internal_ip} \
     -profile=kubernetes \
-    tls/worker-${i}-csr.json | cfssljson -bare tls/worker-${i}
+    tls/worker-${i}-csr.json | bin/cfssljson -bare tls/worker-${i}
 done
 ```
 
-### kube-controller-manager Client Certificate
+### The Controller Manager Client Certificate
 
 ```sh
 cat > tls/kube-controller-manager-csr.json <<EOF
@@ -144,15 +144,15 @@ cat > tls/kube-controller-manager-csr.json <<EOF
 }
 EOF
 
-cfssl gencert \
+bin/cfssl gencert \
   -ca=tls/ca.pem \
   -ca-key=tls/ca-key.pem \
   -config=tls/ca-config.json \
   -profile=kubernetes \
-  tls/kube-controller-manager-csr.json | cfssljson -bare tls/kube-controller-manager
+  tls/kube-controller-manager-csr.json | bin/cfssljson -bare tls/kube-controller-manager
 ```
 
-### kube-proxy Client Certificate
+### The Kube Proxy Client Certificate
 
 ```sh
 cat > tls/kube-proxy-csr.json <<EOF
@@ -174,12 +174,12 @@ cat > tls/kube-proxy-csr.json <<EOF
 }
 EOF
 
-cfssl gencert \
+bin/cfssl gencert \
   -ca=tls/ca.pem \
   -ca-key=tls/ca-key.pem \
   -config=tls/ca-config.json \
   -profile=kubernetes \
-  tls/kube-proxy-csr.json | cfssljson -bare tls/kube-proxy
+  tls/kube-proxy-csr.json | bin/cfssljson -bare tls/kube-proxy
 ```
 
 ### The Scheduler Client Certificate
@@ -204,17 +204,23 @@ cat > tls/kube-scheduler-csr.json <<EOF
 }
 EOF
 
-cfssl gencert \
+bin/cfssl gencert \
   -ca=tls/ca.pem \
   -ca-key=tls/ca-key.pem \
   -config=tls/ca-config.json \
   -profile=kubernetes \
-  tls/kube-scheduler-csr.json | cfssljson -bare tls/kube-scheduler
+  tls/kube-scheduler-csr.json | bin/cfssljson -bare tls/kube-scheduler
 ```
 
-### Kubernetes API Server Certificate
+### The Kubernetes API Server Certificate
 
 ```sh
+KUBERNETES_PUBLIC_ADDRESS=$(aws ec2 describe-addresses \
+  --filters Name=tag:Name,Values=kubernetes-the-hard-way \
+  --query 'Addresses[0].PublicIp' --output text)
+
+KUBERNETES_HOSTNAMES=kubernetes,kubernetes.default,kubernetes.default.svc,kubernetes.default.svc.cluster,kubernetes.svc.cluster.local
+
 cat > tls/kubernetes-csr.json <<EOF
 {
   "CN": "kubernetes",
@@ -234,16 +240,16 @@ cat > tls/kubernetes-csr.json <<EOF
 }
 EOF
 
-cfssl gencert \
+bin/cfssl gencert \
   -ca=tls/ca.pem \
   -ca-key=tls/ca-key.pem \
   -config=tls/ca-config.json \
-  -hostname=10.32.0.1,10.240.0.10,10.240.0.11,10.240.0.12,ip-10-240-0-10,ip-10-240-0-11,ip-10-240-0-12,${KUBERNETES_PUBLIC_ADDRESS},127.0.0.1,kubernetes.default \
+  -hostname=10.32.0.1,10.240.0.10,10.240.0.11,10.240.0.12,ip-10-240-0-10,ip-10-240-0-11,ip-10-240-0-12,${KUBERNETES_PUBLIC_ADDRESS},127.0.0.1,${KUBERNETES_HOSTNAMES} \
   -profile=kubernetes \
-  tls/kubernetes-csr.json | cfssljson -bare tls/kubernetes
+  tls/kubernetes-csr.json | bin/cfssljson -bare tls/kubernetes
 ```
 
-### The Service Account Key Pair
+## The Service Account Key Pair
 
 ```sh
 cat > tls/service-account-csr.json <<EOF
@@ -265,12 +271,12 @@ cat > tls/service-account-csr.json <<EOF
 }
 EOF
 
-cfssl gencert \
+bin/cfssl gencert \
   -ca=tls/ca.pem \
   -ca-key=tls/ca-key.pem \
   -config=tls/ca-config.json \
   -profile=kubernetes \
-  tls/service-account-csr.json | cfssljson -bare tls/service-account
+  tls/service-account-csr.json | bin/cfssljson -bare tls/service-account
 ```
 
 ## Distribute the Client and Server Certificates
@@ -280,7 +286,9 @@ for instance in worker-0 worker-1 worker-2; do
   external_ip=$(aws ec2 describe-instances \
     --filters "Name=tag:Name,Values=${instance}" \
     --output text --query 'Reservations[].Instances[].PublicIpAddress')
+
   scp -i ssh/kubernetes.id_rsa \
+    -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
     tls/ca.pem tls/${instance}-key.pem tls/${instance}.pem \
     ubuntu@${external_ip}:~/
 done
@@ -291,7 +299,9 @@ for instance in controller-0 controller-1 controller-2; do
   external_ip=$(aws ec2 describe-instances \
     --filters "Name=tag:Name,Values=${instance}" \
     --output text --query 'Reservations[].Instances[].PublicIpAddress')
+
   scp -i ssh/kubernetes.id_rsa \
+    -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
     tls/ca.pem tls/ca-key.pem tls/kubernetes-key.pem tls/kubernetes.pem \
     tls/service-account-key.pem tls/service-account.pem \
     ubuntu@${external_ip}:~/
