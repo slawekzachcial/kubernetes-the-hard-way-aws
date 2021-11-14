@@ -217,7 +217,7 @@ bin/cfssl gencert \
 ```sh
 KUBERNETES_PUBLIC_ADDRESS=$(aws ec2 describe-addresses \
   --filters Name=tag:Name,Values=kubernetes-the-hard-way \
-  --query 'Addresses[0].PublicIp' --output text)
+  --output text --query 'Addresses[0].PublicIp')
 
 KUBERNETES_HOSTNAMES=kubernetes,kubernetes.default,kubernetes.default.svc,kubernetes.default.svc.cluster,kubernetes.svc.cluster.local
 
