@@ -7,9 +7,9 @@
 ### Kubernetes Public IP Address
 
 ```sh
-KUBERNETES_PUBLIC_ADDRESS=$(aws elbv2 describe-load-balancers \
-  --load-balancer-arns ${LOAD_BALANCER_ARN} \
-  --output text --query 'LoadBalancers[0].DNSName')
+KUBERNETES_PUBLIC_ADDRESS=$(aws ec2 describe-addresses \
+  --filters Name=tag:Name,Values=kubernetes-the-hard-way \
+  --output text --query 'Addresses[0].PublicIp')
 ```
 
 ### The kubelet Kubernetes Configuration Files
@@ -20,6 +20,7 @@ mkdir -p cfg
 for i in 0 1 2; do
   instance="worker-${i}"
   instance_hostname="ip-10-240-0-2${i}"
+
   bin/kubectl config set-cluster kubernetes-the-hard-way \
     --certificate-authority=tls/ca.pem \
     --embed-certs=true \
@@ -37,8 +38,7 @@ for i in 0 1 2; do
     --user=system:node:${instance_hostname} \
     --kubeconfig=cfg/${instance}.kubeconfig
 
-  bin/kubectl config use-context default \
-    --kubeconfig=cfg/${instance}.kubeconfig
+  bin/kubectl config use-context default --kubeconfig=cfg/${instance}.kubeconfig
 done
 ```
 
@@ -50,17 +50,19 @@ bin/kubectl config set-cluster kubernetes-the-hard-way \
   --embed-certs=true \
   --server=https://${KUBERNETES_PUBLIC_ADDRESS}:6443 \
   --kubeconfig=cfg/kube-proxy.kubeconfig
-bin/kubectl config set-credentials kube-proxy \
+
+bin/kubectl config set-credentials system:kube-proxy \
   --client-certificate=tls/kube-proxy.pem \
   --client-key=tls/kube-proxy-key.pem \
   --embed-certs=true \
   --kubeconfig=cfg/kube-proxy.kubeconfig
+
 bin/kubectl config set-context default \
   --cluster=kubernetes-the-hard-way \
-  --user=kube-proxy \
+  --user=system:kube-proxy \
   --kubeconfig=cfg/kube-proxy.kubeconfig
-bin/kubectl config use-context default \
-  --kubeconfig=cfg/kube-proxy.kubeconfig
+
+bin/kubectl config use-context default --kubeconfig=cfg/kube-proxy.kubeconfig
 ```
 
 ### The kube-controller-manager Kubernetes Configuration File
@@ -139,7 +141,9 @@ for instance in worker-0 worker-1 worker-2; do
   external_ip=$(aws ec2 describe-instances \
     --filters "Name=tag:Name,Values=${instance}" \
     --output text --query 'Reservations[].Instances[].PublicIpAddress')
+
   scp -i ssh/kubernetes.id_rsa \
+    -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
     cfg/${instance}.kubeconfig cfg/kube-proxy.kubeconfig \
     ubuntu@${external_ip}:~/
 done
@@ -150,7 +154,9 @@ for instance in controller-0 controller-1 controller-2; do
   external_ip=$(aws ec2 describe-instances \
     --filters "Name=tag:Name,Values=${instance}" \
     --output text --query 'Reservations[].Instances[].PublicIpAddress')
+
   scp -i ssh/kubernetes.id_rsa \
+    -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
     cfg/admin.kubeconfig cfg/kube-controller-manager.kubeconfig cfg/kube-scheduler.kubeconfig \
     ubuntu@${external_ip}:~/
 done
