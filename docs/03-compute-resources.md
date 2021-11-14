@@ -36,8 +36,8 @@ Create DHCP Options:
 ```sh
 DHCP_OPTION_SET_ID=$(aws ec2 create-dhcp-options \
   --dhcp-configuration \
-    "Key=domain-name,Values=${AWS_DEFAULT_REGION}.compute.internal" \
-    "Key=domain-name-servers,Values=AmazonProvidedDNS" \
+    Key=domain-name,Values=${AWS_DEFAULT_REGION}.compute.internal \
+    Key=domain-name-servers,Values=AmazonProvidedDNS \
   --output text --query 'DhcpOptions.DhcpOptionsId')
 
 aws ec2 create-tags \
@@ -221,6 +221,18 @@ KUBERNETES_PUBLIC_ADDRESS=$(aws elbv2 describe-load-balancers \
 
 ## Compute Instances
 
+### SSH Key Pair
+
+```sh
+mkdir -p ssh
+
+aws ec2 create-key-pair \
+  --key-name kubernetes-the-hard-way \
+  --output text --query 'KeyMaterial' \
+  > ssh/kubernetes.id_rsa
+chmod 600 ssh/kubernetes.id_rsa
+```
+
 ### Instance Image
 
 ```sh
@@ -231,18 +243,8 @@ IMAGE_ID=$(aws ec2 describe-images --owners 099720109477 \
   'Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*' \
   --output text --query 'Images[].[Name,ImageId]' \
   | sort -r | head -n1 | cut -f2)
-```
 
-### SSH Key Pair
-
-```sh
-mkdir -p ssh
-
-aws ec2 create-key-pair \
-  --key-name kubernetes \
-  --output text --query 'KeyMaterial' \
-  > ssh/kubernetes.id_rsa
-chmod 600 ssh/kubernetes.id_rsa
+echo ${IMAGE_ID}
 ```
 
 ### Kubernetes Controllers
@@ -255,7 +257,7 @@ for i in 0 1 2; do
     --associate-public-ip-address \
     --image-id ${IMAGE_ID} \
     --count 1 \
-    --key-name kubernetes \
+    --key-name kubernetes-the-hard-way \
     --security-group-ids ${SECURITY_GROUP_ID} \
     --instance-type t2.micro \
     --private-ip-address 10.240.0.1${i} \
@@ -279,7 +281,7 @@ for i in 0 1 2; do
     --associate-public-ip-address \
     --image-id ${IMAGE_ID} \
     --count 1 \
-    --key-name kubernetes \
+    --key-name kubernetes-the-hard-way \
     --security-group-ids ${SECURITY_GROUP_ID} \
     --instance-type t2.micro \
     --private-ip-address 10.240.0.2${i} \
@@ -293,6 +295,34 @@ for i in 0 1 2; do
     --resources ${instance_id} \
     --tags "Key=Name,Value=worker-${i}"
 done
+```
+
+### Verification
+
+List the compute instances in your default region:
+
+```sh
+aws ec2 describe-instances \
+  --filters Name=vpc-id,Values=${VPC_ID} \
+  --query 'sort_by(Reservations[].Instances[],&PrivateIpAddress)[].{d_INTERNAL_IP:PrivateIpAddress,e_EXTERNAL_IP:PublicIpAddress,a_NAME:Tags[?Key==`Name`].Value | [0],b_ZONE:Placement.AvailabilityZone,c_MACHINE_TYPE:InstanceType,f_STATUS:State.Name}' \
+  --output table
+```
+
+Output:
+
+```
+-------------------------------------------------------------------------------------------------
+|                                       DescribeInstances                                       |
++--------------+-------------+-----------------+----------------+------------------+------------+
+|    a_NAME    |   b_ZONE    | c_MACHINE_TYPE  | d_INTERNAL_IP  |  e_EXTERNAL_IP   | f_STATUS   |
++--------------+-------------+-----------------+----------------+------------------+------------+
+|  controller-0|  us-east-2a |  t2.micro       |  10.240.0.10   |  XX.XXX.XXX.XXX  |  running   |
+|  controller-1|  us-east-2a |  t2.micro       |  10.240.0.11   |  XX.XXX.XXX.XXX  |  running   |
+|  controller-2|  us-east-2a |  t2.micro       |  10.240.0.12   |  XX.XXX.XXX.XXX  |  running   |
+|  worker-0    |  us-east-2a |  t2.micro       |  10.240.0.20   |  XX.XXX.XXX.XXX  |  running   |
+|  worker-1    |  us-east-2a |  t2.micro       |  10.240.0.21   |  XX.XXX.XXX.XXX  |  running   |
+|  worker-2    |  us-east-2a |  t2.micro       |  10.240.0.22   |  XX.XXX.XXX.XXX  |  running   |
++--------------+-------------+-----------------+----------------+------------------+------------+
 ```
 
 Next: [Provisioning a CA and Generating TLS Certificates](04-certificate-authority.md)
