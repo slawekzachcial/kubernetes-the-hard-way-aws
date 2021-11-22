@@ -84,7 +84,7 @@ Create DHCP Options:
 > Note:
 >
 > The commands below expect `AWS_DEFAULT_REGION` variable to be set to the name
-> of AWS region you're deploying to, eg: `us-east-2`.
+> of AWS region you're deploying to, e.g. `us-east-2`.
 
 ```sh
 case "${AWS_DEFAULT_REGION}" in
@@ -589,7 +589,7 @@ ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
 ```
 
 In the section [Configure the etcd Server](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/07-bootstrapping-etcd.md#configure-the-etcd-server)
-retrieve the internal IP address for the current comput instance with the
+retrieve the internal IP address for the current compute instance with the
 following snippet instead:
 
 ```sh
@@ -648,7 +648,7 @@ and the Kubernetes public IP:
 KUBERNETES_PUBLIC_ADDRESS=$(cat KUBERNETES_PUBLIC_ADDRESS)
 ```
 
-In the section [Enable HTTP Heatlh Checks](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/08-bootstrapping-kubernetes-controllers.md#enable-http-health-checks)
+In the section [Enable HTTP Health Checks](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/08-bootstrapping-kubernetes-controllers.md#enable-http-health-checks)
 create and deploy Nginx configuration using the following snippets instead:
 
 ```sh
