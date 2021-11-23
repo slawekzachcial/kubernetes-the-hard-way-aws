@@ -646,6 +646,8 @@ and the Kubernetes public IP:
 
 ```sh
 KUBERNETES_PUBLIC_ADDRESS=$(cat KUBERNETES_PUBLIC_ADDRESS)
+
+echo "${KUBERNETES_PUBLIC_ADDRESS}"
 ```
 
 In the section [Enable HTTP Health Checks](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/08-bootstrapping-kubernetes-controllers.md#enable-http-health-checks)
@@ -812,6 +814,15 @@ ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
   kubectl get nodes --kubeconfig admin.kubeconfig
 ```
 
+Output:
+
+```
+NAME             STATUS   ROLES    AGE   VERSION
+ip-10-240-0-20   Ready    <none>   16s   v1.21.0
+ip-10-240-0-21   Ready    <none>   16s   v1.21.0
+ip-10-240-0-22   Ready    <none>   17s   v1.21.0
+```
+
 
 # Configuring kubectl for Remote Access
 
@@ -912,9 +923,25 @@ List the routes:
 ```sh
 aws ec2 describe-route-tables \
   --filters Name=tag:Name,Values=kubernetes-the-hard-way \
-  --query 'RouteTables[].Routes'
+  --query 'sort_by(RouteTables[0].Routes[],&DestinationCidrBlock)[].{Destination:DestinationCidrBlock,InstanceId:InstanceId,GatewayId:GatewayId}' \
+  --output table
 ```
 
+Output:
+
+```
+-------------------------------------------------------------------
+|                       DescribeRouteTables                       |
++---------------+-------------------------+-----------------------+
+|  Destination  |        GatewayId        |      InstanceId       |
++---------------+-------------------------+-----------------------+
+|  0.0.0.0/0    |  igw-0acc027e68bb7af40  |  None                 |
+|  10.200.0.0/24|  None                   |  i-088499c5e8f5a054e  |
+|  10.200.1.0/24|  None                   |  i-03531f12b3dc8af3c  |
+|  10.200.2.0/24|  None                   |  i-02df4bbc8fbc75733  |
+|  10.240.0.0/24|  local                  |  None                 |
++---------------+-------------------------+-----------------------+
+```
 
 # Deploying the DNS Cluster Add-on
 
@@ -993,6 +1020,9 @@ aws ec2 terminate-instances \
 
 aws ec2 delete-key-pair \
   --key-name kubernetes-the-hard-way
+
+aws ec2 wait instance-terminated \
+  --instance-ids ${INSTANCE_IDS[@]}
 ```
 
 ## Networking
@@ -1075,4 +1105,12 @@ ALLOCATION_ID=$(aws ec2 describe-addresses \
 
 aws ec2 release-address \
   --allocation-id ${ALLOCATION_ID}
+```
+
+Ensure there are no more resources left:
+
+```sh
+aws resourcegroupstaggingapi get-resources \
+  --tag-filters Key=Name,Values=kubernetes-the-hard-way \
+  --output text --query 'ResourceTagMappingList[].ResourceARN'
 ```
