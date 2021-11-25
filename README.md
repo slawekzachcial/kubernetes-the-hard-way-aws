@@ -1112,5 +1112,6 @@ Ensure there are no more resources left:
 ```sh
 aws resourcegroupstaggingapi get-resources \
   --tag-filters Key=Name,Values=kubernetes-the-hard-way \
-  --output text --query 'ResourceTagMappingList[].ResourceARN'
+  --query 'sort_by(ResourceTagMappingList, &ResourceARN)[].ResourceARN' \
+  --output table
 ```
