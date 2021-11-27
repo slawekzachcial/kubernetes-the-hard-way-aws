@@ -1032,6 +1032,13 @@ LOAD_BALANCER_ARN=$(aws elbv2 describe-load-balancers \
   --name kubernetes-the-hard-way \
   --output text --query 'LoadBalancers[0].LoadBalancerArn')
 
+LISTENER_ARN=$(aws elbv2 describe-listeners \
+  --load-balancer-arn "${LOAD_BALANCER_ARN}" \
+  --output text --query 'Listeners[0].ListenerArn')
+
+aws elbv2 delete-listener \
+  --listener-arn "${LISTENER_ARN}"
+
 aws elbv2 delete-load-balancer \
   --load-balancer-arn "${LOAD_BALANCER_ARN}"
 
