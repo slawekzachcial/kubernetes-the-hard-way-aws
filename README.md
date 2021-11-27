@@ -79,32 +79,6 @@ aws ec2 modify-vpc-attribute \
   --enable-dns-hostnames '{"Value": true}'
 ```
 
-Create DHCP Options:
-
-> Note:
->
-> The commands below expect `AWS_DEFAULT_REGION` variable to be set to the name
-> of AWS region you're deploying to, e.g. `us-east-2`.
-
-```sh
-case "${AWS_DEFAULT_REGION}" in
-  "")        echo "AWS_DEFAULT_REGION variable not set!" 1>&2 ;;
-  us-east-1) DOMAIN_NAME=us-east-1.ec2.internal ;;
-  *)         DOMAIN_NAME=${AWS_DEFAULT_REGION}.compute.internal ;;
-esac
-
-DHCP_OPTION_SET_ID=$(aws ec2 create-dhcp-options \
-  --dhcp-configuration \
-    Key=domain-name,Values=${DOMAIN_NAME} \
-    Key=domain-name-servers,Values=AmazonProvidedDNS \
-  --tag-specifications 'ResourceType=dhcp-options,Tags=[{Key=Name,Value=kubernetes-the-hard-way}]' \
-  --output text --query 'DhcpOptions.DhcpOptionsId')
-
-aws ec2 associate-dhcp-options \
-  --dhcp-options-id ${DHCP_OPTION_SET_ID} \
-  --vpc-id ${VPC_ID}
-```
-
 Create Subnet:
 
 ```sh
@@ -1094,13 +1068,6 @@ VPC_ID=$(aws ec2 describe-vpcs \
 
 aws ec2 delete-vpc \
   --vpc-id "${VPC_ID}"
-
-DHCP_OPTION_SET_ID=$(aws ec2 describe-dhcp-options \
-  --filters Name=tag:Name,Values=kubernetes-the-hard-way \
-  --output text --query 'DhcpOptions[0].DhcpOptionsId')
-
-aws ec2 delete-dhcp-options \
-  --dhcp-options-id "${DHCP_OPTION_SET_ID}"
 ```
 
 Release KUBERNETES_PUBLIC_ADDRESS:
