@@ -301,6 +301,22 @@ Output:
 +--------------+-------------+-----------------+----------------+------------------+------------+
 ```
 
+## Public IP Addresses
+
+Store public IP addresses for EC2 instance and for elastic IP in a variable 
+called `PUBLIC_ADDRESS` so you don't have to query them each time:
+
+```sh
+declare -A "PUBLIC_ADDRESS=( $(aws ec2 describe-instances \
+  --filter "Name=tag:Name,Values=controller-0,controller-1,controller-2,worker-0,worker-1,worker-2" "Name=instance-state-name,Values=running" \
+  --output text --query 'Reservations[].Instances[].[Tags[?Key==`Name`].Value | [0],PublicIpAddress]' \
+  | xargs -n2 printf "[%s]=%s ") )"
+
+PUBLIC_ADDRESS[kubernetes]=$(aws ec2 describe-addresses \
+  --filters Name=tag:Name,Values=kubernetes-the-hard-way \
+  --output text --query 'Addresses[0].PublicIp')
+```
+
 
 # Provisioning a CA and Generating TLS Certificates
 
@@ -311,6 +327,8 @@ with the following adjustments:
 In the section [The Kubelet Client Certificates](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/04-certificate-authority.md#the-kubelet-client-certificates)
 generate a certificate and private key for each Kubernetes worker node with
 the following snippet instead:
+
+> `PUBLIC_ADDRESS` variable should have been [initialized](#public-ip-addresses)
 
 ```sh
 for i in 0 1 2; do
@@ -335,13 +353,9 @@ for i in 0 1 2; do
 }
 EOF
 
-  EXTERNAL_IP=$(aws ec2 describe-instances \
-    --filters "Name=tag:Name,Values=${instance}" \
-    --output text --query 'Reservations[].Instances[].PublicIpAddress')
+  EXTERNAL_IP=${PUBLIC_ADDRESS[${instance}]}
 
-  INTERNAL_IP=$(aws ec2 describe-instances \
-    --filters "Name=tag:Name,Values=${instance}" \
-    --output text --query 'Reservations[].Instances[].PrivateIpAddress')
+  INTERNAL_IP="10.240.0.2${i}"
 
   cfssl gencert \
     -ca=ca.pem \
@@ -358,9 +372,7 @@ generate the Kubernetes API Server certificate and private key with the followin
 snippet instead:
 
 ```sh
-KUBERNETES_PUBLIC_ADDRESS=$(aws ec2 describe-addresses \
-  --filters Name=tag:Name,Values=kubernetes-the-hard-way \
-  --output text --query 'Addresses[0].PublicIp')
+KUBERNETES_PUBLIC_ADDRESS=${PUBLIC_ADDRESS[kubernetes]}
 
 CONTROLLER_INSTANCE_HOSTNAMES=ip-10-240-0-10,ip-10-240-0-11,ip-10-240-0-12
 
@@ -399,28 +411,20 @@ copy the certificates and private keys with the following snippets instead:
 
 ```sh
 for instance in worker-0 worker-1 worker-2; do
-  external_ip=$(aws ec2 describe-instances \
-    --filters "Name=tag:Name,Values=${instance}" \
-    --output text --query 'Reservations[].Instances[].PublicIpAddress')
-
   scp -i kubernetes-the-hard-way.id_rsa \
     -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
     ca.pem ${instance}-key.pem ${instance}.pem \
-    ubuntu@${external_ip}:~/
+    ubuntu@${PUBLIC_ADDRESS[${instance}]}:~/
 done
 ```
 
 ```sh
 for instance in controller-0 controller-1 controller-2; do
-  external_ip=$(aws ec2 describe-instances \
-    --filters "Name=tag:Name,Values=${instance}" \
-    --output text --query 'Reservations[].Instances[].PublicIpAddress')
-
   scp -i kubernetes-the-hard-way.id_rsa \
     -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
     ca.pem ca-key.pem kubernetes-key.pem kubernetes.pem \
     service-account-key.pem service-account.pem \
-    ubuntu@${external_ip}:~/
+    ubuntu@${PUBLIC_ADDRESS[${instance}]}:~/
 done
 ```
 
@@ -434,10 +438,10 @@ with the following adjustments:
 In the section [Kubernetes Public IP Address](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/05-kubernetes-configuration-files.md#kubernetes-public-ip-address)
 retrieve the `kubernetes-the-hard-way` static IP address with the following snippet instead:
 
+> `PUBLIC_ADDRESS` variable should have been [initialized](#public-ip-addresses)
+
 ```sh
-KUBERNETES_PUBLIC_ADDRESS=$(aws ec2 describe-addresses \
-  --filters Name=tag:Name,Values=kubernetes-the-hard-way \
-  --output text --query 'Addresses[0].PublicIp')
+KUBERNETES_PUBLIC_ADDRESS=${PUBLIC_ADDRESS[kubernetes]}
 ```
 
 In the section [The kubelet Kubernetes Configuration File](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/05-kubernetes-configuration-files.md#the-kubelet-kubernetes-configuration-file)
@@ -474,27 +478,19 @@ copy kubeconfig files with the following snippets instead:
 
 ```sh
 for instance in worker-0 worker-1 worker-2; do
-  external_ip=$(aws ec2 describe-instances \
-    --filters "Name=tag:Name,Values=${instance}" \
-    --output text --query 'Reservations[].Instances[].PublicIpAddress')
-
   scp -i kubernetes-the-hard-way.id_rsa \
     -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
     ${instance}.kubeconfig kube-proxy.kubeconfig \
-    ubuntu@${external_ip}:~/
+    ubuntu@${PUBLIC_ADDRESS[${instance}]}:~/
 done
 ```
 
 ```sh
 for instance in controller-0 controller-1 controller-2; do
-  external_ip=$(aws ec2 describe-instances \
-    --filters "Name=tag:Name,Values=${instance}" \
-    --output text --query 'Reservations[].Instances[].PublicIpAddress')
-
   scp -i kubernetes-the-hard-way.id_rsa \
     -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
     admin.kubeconfig kube-controller-manager.kubeconfig kube-scheduler.kubeconfig \
-    ubuntu@${external_ip}:~/
+    ubuntu@${PUBLIC_ADDRESS[${instance}]}:~/
 done
 ```
 
@@ -507,15 +503,13 @@ with the following adjustments:
 
 Copy the `encryption-config.yaml` with the following snippet instead:
 
+> `PUBLIC_ADDRESS` variable should have been [initialized](#public-ip-addresses)
+
 ```sh
 for instance in controller-0 controller-1 controller-2; do
-  external_ip=$(aws ec2 describe-instances \
-    --filters "Name=tag:Name,Values=${instance}" \
-    --output text --query 'Reservations[].Instances[].PublicIpAddress')
-
   scp -i kubernetes-the-hard-way.id_rsa \
     -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-    encryption-config.yaml ubuntu@${external_ip}:~/
+    encryption-config.yaml ubuntu@${PUBLIC_ADDRESS[${instance}]}:~/
 done
 ```
 
@@ -533,7 +527,7 @@ controller-0:
 
 ```sh
 external_ip=$(aws ec2 describe-instances \
-  --filters "Name=tag:Name,Values=controller-0" \
+  --filters "Name=tag:Name,Values=controller-0" "Name=instance-state-name,Values=running" \
   --output text --query 'Reservations[].Instances[].PublicIpAddress')
 
 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
@@ -544,7 +538,7 @@ controller-1:
 
 ```sh
 external_ip=$(aws ec2 describe-instances \
-  --filters "Name=tag:Name,Values=controller-1" \
+  --filters "Name=tag:Name,Values=controller-1" "Name=instance-state-name,Values=running" \
   --output text --query 'Reservations[].Instances[].PublicIpAddress')
 
 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
@@ -555,7 +549,7 @@ controller-2:
 
 ```sh
 external_ip=$(aws ec2 describe-instances \
-  --filters "Name=tag:Name,Values=controller-2" \
+  --filters "Name=tag:Name,Values=controller-2" "Name=instance-state-name,Values=running" \
   --output text --query 'Reservations[].Instances[].PublicIpAddress')
 
 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
@@ -588,15 +582,13 @@ Before following the guide instructions run the following command from the termi
 you used to create compute resources to store on each controller the value of
 KUBERNETES_PUBLIC_ADDRESS that will need needed in later in this chapter:
 
+> `PUBLIC_ADDRESS` variable should have been [initialized](#public-ip-addresses)
+
 ```sh
 for instance in controller-0 controller-1 controller-2; do
-  external_ip=$(aws ec2 describe-instances \
-    --filters "Name=tag:Name,Values=${instance}" \
-    --output text --query 'Reservations[].Instances[].PublicIpAddress')
-
   ssh -i kubernetes-the-hard-way.id_rsa \
     -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-    ubuntu@${external_ip} "echo "${KUBERNETES_PUBLIC_ADDRESS}" > KUBERNETES_PUBLIC_ADDRESS"
+    ubuntu@${PUBLIC_ADDRESS[${instance}]} "echo "${KUBERNETES_PUBLIC_ADDRESS}" > KUBERNETES_PUBLIC_ADDRESS"
 done
 ```
 
@@ -705,9 +697,7 @@ retrieve the `kubernetes-the-hard-way` static IP address with the following
 snippet instead:
 
 ```sh
-KUBERNETES_PUBLIC_ADDRESS=$(aws ec2 describe-addresses \
-  --filters Name=tag:Name,Values=kubernetes-the-hard-way \
-  --output text --query 'Addresses[0].PublicIp')
+KUBERNETES_PUBLIC_ADDRESS=${PUBLIC_ADDRESS[kubernetes]}
 ```
 
 
@@ -724,7 +714,7 @@ worker-0:
 
 ```sh
 external_ip=$(aws ec2 describe-instances \
-  --filters "Name=tag:Name,Values=worker-0" \
+  --filters "Name=tag:Name,Values=worker-0" "Name=instance-state-name,Values=running" \
   --output text --query 'Reservations[].Instances[].PublicIpAddress')
 
 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
@@ -735,7 +725,7 @@ worker-1:
 
 ```sh
 external_ip=$(aws ec2 describe-instances \
-  --filters "Name=tag:Name,Values=worker-1" \
+  --filters "Name=tag:Name,Values=worker-1" "Name=instance-state-name,Values=running" \
   --output text --query 'Reservations[].Instances[].PublicIpAddress')
 
 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
@@ -746,7 +736,7 @@ worker-2:
 
 ```sh
 external_ip=$(aws ec2 describe-instances \
-  --filters "Name=tag:Name,Values=worker-2" \
+  --filters "Name=tag:Name,Values=worker-2" "Name=instance-state-name,Values=running" \
   --output text --query 'Reservations[].Instances[].PublicIpAddress')
 
 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
@@ -778,13 +768,11 @@ echo "${HOSTNAME}"
 In the section [Verification](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/09-bootstrapping-kubernetes-workers.md#verification)
 list the registered Kubernetes nodes with the following snippet instead:
 
-```sh
-external_ip=$(aws ec2 describe-instances \
-  --filters "Name=tag:Name,Values=controller-0" \
-  --output text --query 'Reservations[].Instances[].PublicIpAddress')
+> `PUBLIC_ADDRESS` variable should have been [initialized](#public-ip-addresses)
 
+```sh
 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-  -i kubernetes-the-hard-way.id_rsa ubuntu@${external_ip} \
+  -i kubernetes-the-hard-way.id_rsa ubuntu@${PUBLIC_ADDRESS[controller-0]} \
   kubectl get nodes --kubeconfig admin.kubeconfig
 ```
 
@@ -808,11 +796,11 @@ In the section [The Admin Kubernetes Configuration File](https://github.com/kels
 generate a kubeconfig file suitable for authenticating as the `admin` user with
 the following snippet instead:
 
+> `PUBLIC_ADDRESS` variable should have been [initialized](#public-ip-addresses)
+
 ```sh
 {
-  KUBERNETES_PUBLIC_ADDRESS=$(aws ec2 describe-addresses \
-    --filters Name=tag:Name,Values=kubernetes-the-hard-way \
-    --output text --query 'Addresses[0].PublicIp')
+  KUBERNETES_PUBLIC_ADDRESS=${PUBLIC_ADDRESS[kubernetes]}
 
   kubectl config set-cluster kubernetes-the-hard-way \
     --certificate-authority=ca.pem \
@@ -852,7 +840,7 @@ Print the internal IP address and Pod CIDR range for each worker instance:
 ```sh
 for instance in worker-0 worker-1 worker-2; do
   instance_id_ip=($(aws ec2 describe-instances \
-    --filters "Name=tag:Name,Values=${instance}" \
+    --filters "Name=tag:Name,Values=${instance}" "Name=instance-state-name,Values=running" \
     --output text --query 'Reservations[].Instances[0].[InstanceId,PrivateIpAddress]'))
 
   pod_cidr="$(aws ec2 describe-instance-attribute \
@@ -933,21 +921,18 @@ In the section [Data Encryption](https://github.com/kelseyhightower/kubernetes-t
 print a hexdump of the `kubernetes-the-hard-way` secret stored in etcd with the
 following snippet instead:
 
+> `PUBLIC_ADDRESS` variable should have been [initialized](#public-ip-addresses)
 
 ```sh
-external_ip=$(aws ec2 describe-instances \
-  --filters "Name=tag:Name,Values=controller-0" \
-  --output text --query 'Reservations[].Instances[].PublicIpAddress')
-
-ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-  -i kubernetes-the-hard-way.id_rsa \
-  ubuntu@${external_ip} \
-  "sudo ETCDCTL_API=3 etcdctl get \
-  --endpoints=https://127.0.0.1:2379 \
-  --cacert=/etc/etcd/ca.pem \
-  --cert=/etc/etcd/kubernetes.pem \
-  --key=/etc/etcd/kubernetes-key.pem\
-  /registry/secrets/default/kubernetes-the-hard-way | hexdump -C"
+ ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+   -i kubernetes-the-hard-way.id_rsa \
+   ubuntu@${PUBLIC_ADDRESS[controller-0]} \
+   "sudo ETCDCTL_API=3 etcdctl get \
+   --endpoints=https://127.0.0.1:2379 \
+   --cacert=/etc/etcd/ca.pem \
+   --cert=/etc/etcd/kubernetes.pem \
+   --key=/etc/etcd/kubernetes-key.pem\
+   /registry/secrets/default/kubernetes-the-hard-way | hexdump -C"
 ```
 
 In the section [Services](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/13-smoke-test.md#services)
@@ -970,9 +955,7 @@ and retrieve the external IP address of a worker instance using the following
 snippet instead:
 
 ```sh
-EXTERNAL_IP=$(aws ec2 describe-instances \
-  --filters "Name=tag:Name,Values=worker-0" \
-  --output text --query 'Reservations[].Instances[].PublicIpAddress')
+EXTERNAL_IP=${PUBLIC_ADDRESS[worker-0]}
 
 echo ${EXTERNAL_IP}
 ```
@@ -986,11 +969,13 @@ echo ${EXTERNAL_IP}
 
 ```sh
 INSTANCE_IDS=($(aws ec2 describe-instances \
-      --filter "Name=tag:Name,Values=controller-0,controller-1,controller-2,worker-0,worker-1,worker-2" \
+      --filter "Name=tag:Name,Values=controller-0,controller-1,controller-2,worker-0,worker-1,worker-2" "Name=instance-state-name,Values=running" \
       --output text --query 'Reservations[].Instances[].InstanceId'))
 
 aws ec2 terminate-instances \
-  --instance-ids ${INSTANCE_IDS[@]}
+  --instance-ids ${INSTANCE_IDS[@]} \
+  --query 'TerminatingInstances[].InstanceId' \
+  --output table
 
 aws ec2 delete-key-pair \
   --key-name kubernetes-the-hard-way
@@ -1000,6 +985,8 @@ aws ec2 wait instance-terminated \
 ```
 
 ## Networking
+
+Delete load balancer:
 
 ```sh
 LOAD_BALANCER_ARN=$(aws elbv2 describe-load-balancers \
@@ -1022,14 +1009,22 @@ TARGET_GROUP_ARN=$(aws elbv2 describe-target-groups \
 
 aws elbv2 delete-target-group \
   --target-group-arn "${TARGET_GROUP_ARN}"
+```
 
+Delete security group:
+
+```sh
 SECURITY_GROUP_ID=$(aws ec2 describe-security-groups \
   --filters "Name=tag:Name,Values=kubernetes-the-hard-way" \
   --output text --query 'SecurityGroups[0].GroupId')
 
 aws ec2 delete-security-group \
   --group-id "${SECURITY_GROUP_ID}"
+```
 
+Delete route table:
+
+```sh
 ROUTE_TABLE_ASSOCIATION_ID="$(aws ec2 describe-route-tables \
   --route-table-ids "${ROUTE_TABLE_ID}" \
   --output text --query 'RouteTables[].Associations[].RouteTableAssociationId')"
@@ -1043,7 +1038,11 @@ ROUTE_TABLE_ID=$(aws ec2 describe-route-tables \
 
 aws ec2 delete-route-table \
   --route-table-id "${ROUTE_TABLE_ID}"
+```
 
+Delete Internet gateway:
+
+```sh
 INTERNET_GATEWAY_ID=$(aws ec2 describe-internet-gateways \
   --filters "Name=tag:Name,Values=kubernetes-the-hard-way" \
   --output text --query 'InternetGateways[0].InternetGatewayId')
@@ -1054,7 +1053,11 @@ aws ec2 detach-internet-gateway \
 
 aws ec2 delete-internet-gateway \
   --internet-gateway-id "${INTERNET_GATEWAY_ID}"
+```
 
+Delete subnet and VPC:
+
+```sh
 SUBNET_ID=$(aws ec2 describe-subnets \
   --filters Name=tag:Name,Values=kubernetes-the-hard-way \
   --output text --query 'Subnets[0].SubnetId')
