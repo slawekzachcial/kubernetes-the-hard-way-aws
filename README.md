@@ -12,6 +12,9 @@ highlights differences from the original guide.
 The intent of this page is similar to the original guide. My motivation to
 create it has been to learn more about AWS and Kubernetes.
 
+This revision of the guide corresponds to revision [79a3f79](https://github.com/kelseyhightower/kubernetes-the-hard-way/tree/79a3f79b27bd28f82f071bb877a266c2e62ee506)
+of the original guide which provides details about setting up **Kubernetes 1.21**.
+
 ## Labs
 
 * [Prerequisites](#prerequisites)
@@ -51,12 +54,12 @@ Details how to configure AWS CLI are available
 # Installing the Client Tools
 
 Follow the [guide
-instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/02-client-tools.md).
+instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/02-client-tools.md).
 
 
 # Provisioning Compute Resources
 
-[Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/03-compute-resources.md)
+[Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/03-compute-resources.md)
 
 ## Networking
 
@@ -321,10 +324,10 @@ PUBLIC_ADDRESS[kubernetes]=$(aws ec2 describe-addresses \
 # Provisioning a CA and Generating TLS Certificates
 
 Follow the [guide
-instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/04-certificate-authority.md)
+instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/04-certificate-authority.md)
 with the following adjustments:
 
-In the section [The Kubelet Client Certificates](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/04-certificate-authority.md#the-kubelet-client-certificates)
+In the section [The Kubelet Client Certificates](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/04-certificate-authority.md#the-kubelet-client-certificates)
 generate a certificate and private key for each Kubernetes worker node with
 the following snippet instead:
 
@@ -367,7 +370,7 @@ EOF
 done
 ```
 
-In the section [The Kubernetes API Server Certificate](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/04-certificate-authority.md#the-kubernetes-api-server-certificate)
+In the section [The Kubernetes API Server Certificate](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/04-certificate-authority.md#the-kubernetes-api-server-certificate)
 generate the Kubernetes API Server certificate and private key with the following
 snippet instead:
 
@@ -406,7 +409,7 @@ cfssl gencert \
   kubernetes-csr.json | cfssljson -bare kubernetes
 ```
 
-In the section [Distribute the Client and Server Certificates](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/04-certificate-authority.md#distribute-the-client-and-server-certificates)
+In the section [Distribute the Client and Server Certificates](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/04-certificate-authority.md#distribute-the-client-and-server-certificates)
 copy the certificates and private keys with the following snippets instead:
 
 ```sh
@@ -432,10 +435,10 @@ done
 # Generating Kubernetes Configuration Files for Authentication
 
 Follow the [guide
-instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/05-kubernetes-configuration-files.md)
+instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/05-kubernetes-configuration-files.md)
 with the following adjustments:
 
-In the section [Kubernetes Public IP Address](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/05-kubernetes-configuration-files.md#kubernetes-public-ip-address)
+In the section [Kubernetes Public IP Address](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/05-kubernetes-configuration-files.md#kubernetes-public-ip-address)
 retrieve the `kubernetes-the-hard-way` static IP address with the following snippet instead:
 
 > `PUBLIC_ADDRESS` variable should have been [initialized](#public-ip-addresses)
@@ -444,7 +447,7 @@ retrieve the `kubernetes-the-hard-way` static IP address with the following snip
 KUBERNETES_PUBLIC_ADDRESS=${PUBLIC_ADDRESS[kubernetes]}
 ```
 
-In the section [The kubelet Kubernetes Configuration File](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/05-kubernetes-configuration-files.md#the-kubelet-kubernetes-configuration-file)
+In the section [The kubelet Kubernetes Configuration File](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/05-kubernetes-configuration-files.md#the-kubelet-kubernetes-configuration-file)
 generate a kubeconfig file for each worker node with the following snippet instead:
 
 ```sh
@@ -473,7 +476,7 @@ for i in 0 1 2; do
 done
 ```
 
-In the section [Distribute the Kubernetes Configuration Files](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/05-kubernetes-configuration-files.md#distribute-the-kubernetes-configuration-files)
+In the section [Distribute the Kubernetes Configuration Files](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/05-kubernetes-configuration-files.md#distribute-the-kubernetes-configuration-files)
 copy kubeconfig files with the following snippets instead:
 
 ```sh
@@ -498,7 +501,7 @@ done
 # Generating the Data Encryption Config and Key
 
 Follow the [guide
-instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/06-data-encryption-keys.md)
+instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/06-data-encryption-keys.md)
 with the following adjustments:
 
 Copy the `encryption-config.yaml` with the following snippet instead:
@@ -517,10 +520,10 @@ done
 # Bootstrapping the etcd Cluster
 
 Follow the [guide
-instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/07-bootstrapping-etcd.md)
+instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/07-bootstrapping-etcd.md)
 with the following adjustments:
 
-In the section [Prerequisites](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/07-bootstrapping-etcd.md#prerequisites)
+In the section [Prerequisites](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/07-bootstrapping-etcd.md#prerequisites)
 login to each controller instance using the following snippets instead:
 
 controller-0:
@@ -556,7 +559,7 @@ ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
   -i kubernetes-the-hard-way.id_rsa ubuntu@${external_ip}
 ```
 
-In the section [Configure the etcd Server](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/07-bootstrapping-etcd.md#configure-the-etcd-server)
+In the section [Configure the etcd Server](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/07-bootstrapping-etcd.md#configure-the-etcd-server)
 retrieve the internal IP address for the current compute instance with the
 following snippet instead:
 
@@ -593,12 +596,12 @@ done
 ```
 
 Follow the [guide
-instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/08-bootstrapping-kubernetes-controllers.md)
+instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/08-bootstrapping-kubernetes-controllers.md)
 with the following adjustments:
 
 SSH to each controller as described in [previous section](#bootstrapping-the-etcd-cluster).
 
-In the section [Configure the Kubernetes API Server](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/08-bootstrapping-kubernetes-controllers.md#configure-the-kubernetes-api-server)
+In the section [Configure the Kubernetes API Server](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/08-bootstrapping-kubernetes-controllers.md#configure-the-kubernetes-api-server)
 retrieve the internal IP address for the current compute instance with the
 following snippet instead:
 
@@ -616,7 +619,7 @@ KUBERNETES_PUBLIC_ADDRESS=$(cat KUBERNETES_PUBLIC_ADDRESS)
 echo "${KUBERNETES_PUBLIC_ADDRESS}"
 ```
 
-In the section [Enable HTTP Health Checks](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/08-bootstrapping-kubernetes-controllers.md#enable-http-health-checks)
+In the section [Enable HTTP Health Checks](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/08-bootstrapping-kubernetes-controllers.md#enable-http-health-checks)
 create and deploy Nginx configuration using the following snippets instead:
 
 ```sh
@@ -642,7 +645,7 @@ EOF
 }
 ```
 
-In the section [The Kubernetes Frontend Load Balancer](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/08-bootstrapping-kubernetes-controllers.md#the-kubernetes-frontend-load-balancer)
+In the section [The Kubernetes Frontend Load Balancer](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/08-bootstrapping-kubernetes-controllers.md#the-kubernetes-frontend-load-balancer)
 create the external load balancer network resources with the following snippet
 instead:
 
@@ -692,7 +695,7 @@ aws elbv2 create-listener \
   --output text --query 'Listeners[].ListenerArn'
 ```
 
-In the section [Verification](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/08-bootstrapping-kubernetes-controllers.md#verification-1)
+In the section [Verification](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/08-bootstrapping-kubernetes-controllers.md#verification-1)
 retrieve the `kubernetes-the-hard-way` static IP address with the following
 snippet instead:
 
@@ -704,10 +707,10 @@ KUBERNETES_PUBLIC_ADDRESS=${PUBLIC_ADDRESS[kubernetes]}
 # Bootstrapping the Kubernetes Worker Nodes
 
 Follow the [guide
-instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/09-bootstrapping-kubernetes-workers.md)
+instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/09-bootstrapping-kubernetes-workers.md)
 with the following adjustments:
 
-In the section [Prerequisites](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/09-bootstrapping-kubernetes-workers.md#prerequisites)
+In the section [Prerequisites](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/09-bootstrapping-kubernetes-workers.md#prerequisites)
 login to each worker instance using the following snippets instead:
 
 worker-0:
@@ -743,7 +746,7 @@ ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
   -i kubernetes-the-hard-way.id_rsa ubuntu@${external_ip}
 ```
 
-In the section [Configure CNI Networking](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/09-bootstrapping-kubernetes-workers.md#configure-cni-networking)
+In the section [Configure CNI Networking](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/09-bootstrapping-kubernetes-workers.md#configure-cni-networking)
 retrieve the Pod CIDR range for the current compute instance with the following
 snippet instead:
 
@@ -754,7 +757,7 @@ POD_CIDR=$(curl -s http://169.254.169.254/latest/user-data/ \
 echo "${POD_CIDR}"
 ```
 
-In the section [Configure the Kubelet](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/09-bootstrapping-kubernetes-workers.md#configure-the-kubelet)
+In the section [Configure the Kubelet](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/09-bootstrapping-kubernetes-workers.md#configure-the-kubelet)
 before executing any command set HOSTNAME in the local shell with the following
 snippet:
 
@@ -765,7 +768,7 @@ HOSTNAME=$(curl -s http://169.254.169.254/latest/user-data/ \
 echo "${HOSTNAME}"
 ```
 
-In the section [Verification](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/09-bootstrapping-kubernetes-workers.md#verification)
+In the section [Verification](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/09-bootstrapping-kubernetes-workers.md#verification)
 list the registered Kubernetes nodes with the following snippet instead:
 
 > `PUBLIC_ADDRESS` variable should have been [initialized](#public-ip-addresses)
@@ -789,10 +792,10 @@ ip-10-240-0-22   Ready    <none>   17s   v1.21.0
 # Configuring kubectl for Remote Access
 
 Follow the [guide
-instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/10-configuring-kubectl.md)
+instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/10-configuring-kubectl.md)
 with the following adjustments:
 
-In the section [The Admin Kubernetes Configuration File](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/10-configuring-kubectl.md#the-admin-kubernetes-configuration-file)
+In the section [The Admin Kubernetes Configuration File](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/10-configuring-kubectl.md#the-admin-kubernetes-configuration-file)
 generate a kubeconfig file suitable for authenticating as the `admin` user with
 the following snippet instead:
 
@@ -819,7 +822,7 @@ the following snippet instead:
 }
 ```
 
-In the section [Verification](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/10-configuring-kubectl.md#verification)
+In the section [Verification](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/10-configuring-kubectl.md#verification)
 the output of the command `kubectl get nodes` should look like this instead:
 
 ```
@@ -831,7 +834,7 @@ ip-10-240-0-22   Ready    <none>   91s   v1.21.0
 
 # Provisioning Pod Network Routes
 
-[Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/11-pod-network-routes.md)
+[Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/11-pod-network-routes.md)
 
 ## The Routing Table
 
@@ -908,16 +911,16 @@ Output:
 # Deploying the DNS Cluster Add-on
 
 Follow the [guide
-instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/12-dns-addon.md).
+instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/12-dns-addon.md).
 
 
 # Smoke Test
 
 Follow the [guide
-instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/13-smoke-test.md)
+instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/13-smoke-test.md)
 with the following adjustments:
 
-In the section [Data Encryption](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/13-smoke-test.md#data-encryption)
+In the section [Data Encryption](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/13-smoke-test.md#data-encryption)
 print a hexdump of the `kubernetes-the-hard-way` secret stored in etcd with the
 following snippet instead:
 
@@ -935,7 +938,7 @@ following snippet instead:
    /registry/secrets/default/kubernetes-the-hard-way | hexdump -C"
 ```
 
-In the section [Services](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/13-smoke-test.md#services)
+In the section [Services](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/13-smoke-test.md#services)
 create firewall rule that allows remote access to nginx node port using the following
 snippet instead:
 
@@ -963,7 +966,7 @@ echo ${EXTERNAL_IP}
 
 # Cleaning Up
 
-[Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/master/docs/14-cleanup.md)
+[Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/14-cleanup.md)
 
 ## Compute Instances
 
