@@ -1,6 +1,7 @@
 # Kubernetes The Hard Way - AWS
 
-Welcome to the AWS companion to [Kubernetes The Hard Way](https://github.com/kelseyhightower/kubernetes-the-hard-way/) guide.
+Welcome to the AWS companion to [Kubernetes The Hard
+Way](https://github.com/kelseyhightower/kubernetes-the-hard-way/) guide.
 
 It compiles AWS CLI commands, based initially on revision
 [8185017](https://github.com/kelseyhightower/kubernetes-the-hard-way/tree/818501707e418fc4d6e6aedef8395ca368e3097e)
@@ -32,10 +33,9 @@ of the original guide which provides details about setting up **Kubernetes 1.21*
 * [Smoke Test](#smoke-test)
 * [Cleaning Up](#cleaning-up)
 
+## Prerequisites
 
-# Prerequisites
-
-## Amazon Web Services
+### Amazon Web Services
 
 The commands below deploy Kubernetes cluster into [Amazon Web
 Services](https://aws.amazon.com). At some point I was able to provision AWS
@@ -43,27 +43,25 @@ resources within [AWS Free Tier](https://aws.amazon.com/free/), at no cost.
 However, as the page evolves I am not able to validate it each time so some
 minimum charges may apply.
 
-## Amazon Web Services CLI
+### Amazon Web Services CLI
 
-Install AWS CLI following instructions at https://aws.amazon.com/cli/.
+Install AWS CLI following instructions at <https://aws.amazon.com/cli/>.
 
-Details how to configure AWS CLI are available
-[here](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html).
+Details how to configure AWS CLI are available in
+[this guide](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html).
 
-
-# Installing the Client Tools
+## Installing the Client Tools
 
 Follow the [guide
 instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/02-client-tools.md).
 
-
-# Provisioning Compute Resources
+## Provisioning Compute Resources
 
 [Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/03-compute-resources.md)
 
-## Networking
+### Networking
 
-### Virtual Private Cloud Network
+#### Virtual Private Cloud Network
 
 Create VPC:
 
@@ -122,7 +120,7 @@ aws ec2 create-route \
   --gateway-id ${INTERNET_GATEWAY_ID}
 ```
 
-### Firewall Rules (aka Security Group)
+#### Firewall Rules (aka Security Group)
 
 ```sh
 SECURITY_GROUP_ID=$(aws ec2 create-security-group \
@@ -172,7 +170,7 @@ aws ec2 describe-security-group-rules \
 
 Output:
 
-```
+```txt
 -----------------------------------------------------------
 |               DescribeSecurityGroupRules                |
 +------------+-------------+-----------+------------------+
@@ -187,7 +185,7 @@ Output:
 +------------+-------------+-----------+------------------+
 ```
 
-### Kubernetes Public IP Address
+#### Kubernetes Public IP Address
 
 ```sh
 ALLOCATION_ID=$(aws ec2 allocate-address \
@@ -202,7 +200,7 @@ Verify the address was created in your default region:
 aws ec2 describe-addresses --allocation-ids ${ALLOCATION_ID}
 ```
 
-## Compute Instances
+### Compute Instances
 
 Create SSH key pair:
 
@@ -228,7 +226,7 @@ IMAGE_ID=$(aws ec2 describe-images --owners 099720109477 \
 echo ${IMAGE_ID}
 ```
 
-### Kubernetes Controllers
+#### Kubernetes Controllers
 
 Using `t2.micro` instead of `t2.small` as `t2.micro` is covered by AWS free tier.
 
@@ -253,7 +251,7 @@ for i in 0 1 2; do
 done
 ```
 
-### Kubernetes Workers
+#### Kubernetes Workers
 
 ```sh
 for i in 0 1 2; do
@@ -276,7 +274,7 @@ for i in 0 1 2; do
 done
 ```
 
-### Verification
+#### Verification
 
 List the compute instances in your default region:
 
@@ -289,7 +287,7 @@ aws ec2 describe-instances \
 
 Output:
 
-```
+```txt
 -------------------------------------------------------------------------------------------------
 |                                       DescribeInstances                                       |
 +--------------+-------------+-----------------+----------------+------------------+------------+
@@ -304,9 +302,9 @@ Output:
 +--------------+-------------+-----------------+----------------+------------------+------------+
 ```
 
-## Public IP Addresses
+### Public IP Addresses
 
-Store public IP addresses for EC2 instance and for elastic IP in a variable 
+Store public IP addresses for EC2 instance and for elastic IP in a variable
 called `PUBLIC_ADDRESS` so you don't have to query them each time:
 
 ```sh
@@ -320,8 +318,7 @@ PUBLIC_ADDRESS[kubernetes]=$(aws ec2 describe-addresses \
   --output text --query 'Addresses[0].PublicIp')
 ```
 
-
-# Provisioning a CA and Generating TLS Certificates
+## Provisioning a CA and Generating TLS Certificates
 
 Follow the [guide
 instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/04-certificate-authority.md)
@@ -431,15 +428,15 @@ for instance in controller-0 controller-1 controller-2; do
 done
 ```
 
-
-# Generating Kubernetes Configuration Files for Authentication
+## Generating Kubernetes Configuration Files for Authentication
 
 Follow the [guide
 instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/05-kubernetes-configuration-files.md)
 with the following adjustments:
 
 In the section [Kubernetes Public IP Address](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/05-kubernetes-configuration-files.md#kubernetes-public-ip-address)
-retrieve the `kubernetes-the-hard-way` static IP address with the following snippet instead:
+retrieve the `kubernetes-the-hard-way` static IP address with the following
+snippet instead:
 
 > `PUBLIC_ADDRESS` variable should have been [initialized](#public-ip-addresses)
 
@@ -497,8 +494,7 @@ for instance in controller-0 controller-1 controller-2; do
 done
 ```
 
-
-# Generating the Data Encryption Config and Key
+## Generating the Data Encryption Config and Key
 
 Follow the [guide
 instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/06-data-encryption-keys.md)
@@ -516,8 +512,7 @@ for instance in controller-0 controller-1 controller-2; do
 done
 ```
 
-
-# Bootstrapping the etcd Cluster
+## Bootstrapping the etcd Cluster
 
 Follow the [guide
 instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/07-bootstrapping-etcd.md)
@@ -578,8 +573,7 @@ ETCD_NAME=$(curl -s http://169.254.169.254/latest/user-data/ \
 echo "${ETCD_NAME}"
 ```
 
-
-# Bootstrapping the Kubernetes Control Plane
+## Bootstrapping the Kubernetes Control Plane
 
 Before following the guide instructions run the following command from the terminal
 you used to create compute resources to store on each controller the value of
@@ -703,8 +697,7 @@ snippet instead:
 KUBERNETES_PUBLIC_ADDRESS=${PUBLIC_ADDRESS[kubernetes]}
 ```
 
-
-# Bootstrapping the Kubernetes Worker Nodes
+## Bootstrapping the Kubernetes Worker Nodes
 
 Follow the [guide
 instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/09-bootstrapping-kubernetes-workers.md)
@@ -781,15 +774,14 @@ ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
 
 Output:
 
-```
+```txt
 NAME             STATUS   ROLES    AGE   VERSION
 ip-10-240-0-20   Ready    <none>   16s   v1.21.0
 ip-10-240-0-21   Ready    <none>   16s   v1.21.0
 ip-10-240-0-22   Ready    <none>   17s   v1.21.0
 ```
 
-
-# Configuring kubectl for Remote Access
+## Configuring kubectl for Remote Access
 
 Follow the [guide
 instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/10-configuring-kubectl.md)
@@ -825,18 +817,18 @@ the following snippet instead:
 In the section [Verification](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/10-configuring-kubectl.md#verification)
 the output of the command `kubectl get nodes` should look like this instead:
 
-```
+```txt
 NAME             STATUS   ROLES    AGE   VERSION
 ip-10-240-0-20   Ready    <none>   91s   v1.21.0
 ip-10-240-0-21   Ready    <none>   91s   v1.21.0
 ip-10-240-0-22   Ready    <none>   91s   v1.21.0
 ```
 
-# Provisioning Pod Network Routes
+## Provisioning Pod Network Routes
 
 [Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/11-pod-network-routes.md)
 
-## The Routing Table
+### The Routing Table
 
 Print the internal IP address and Pod CIDR range for each worker instance:
 
@@ -856,7 +848,7 @@ for instance in worker-0 worker-1 worker-2; do
 done
 ```
 
-## Routes
+### Routes
 
 Create network routes for each worker instance:
 
@@ -894,7 +886,7 @@ aws ec2 describe-route-tables \
 
 Output:
 
-```
+```txt
 -------------------------------------------------------------------
 |                       DescribeRouteTables                       |
 +---------------+-------------------------+-----------------------+
@@ -908,13 +900,12 @@ Output:
 +---------------+-------------------------+-----------------------+
 ```
 
-# Deploying the DNS Cluster Add-on
+## Deploying the DNS Cluster Add-on
 
 Follow the [guide
 instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/12-dns-addon.md).
 
-
-# Smoke Test
+## Smoke Test
 
 Follow the [guide
 instructions](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/13-smoke-test.md)
@@ -963,12 +954,11 @@ EXTERNAL_IP=${PUBLIC_ADDRESS[worker-0]}
 echo ${EXTERNAL_IP}
 ```
 
-
-# Cleaning Up
+## Cleaning Up
 
 [Guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/79a3f79b27bd28f82f071bb877a266c2e62ee506/docs/14-cleanup.md)
 
-## Compute Instances
+### Compute Instances
 
 ```sh
 INSTANCE_IDS=($(aws ec2 describe-instances \
@@ -987,7 +977,7 @@ aws ec2 wait instance-terminated \
   --instance-ids ${INSTANCE_IDS[@]}
 ```
 
-## Networking
+### Networking
 
 Delete load balancer:
 
