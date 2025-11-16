@@ -8,3 +8,5 @@
 /terraform/tls/*.pem
 /terraform/tls/*.csr
 /terraform/tls/worker-*-csr.json
+*.id_rsa
+machines.txt
