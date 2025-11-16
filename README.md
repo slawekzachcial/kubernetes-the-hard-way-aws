@@ -18,16 +18,20 @@ You can also find [previous version of this guide](https://github.com/slawekzach
 
 * [Prerequisites](#prerequisites)
   * [Amazon Web Services](#amazon-web-services)
-  * [Networking](#networking)
-  * [Compute Instances](#compute-instances)
-  * [Machine Database](#machine-database)
-  * [SSH Access](#ssh-access)
-  * [Hosts File](#hosts-file)
+  * [AWS CLI](#aws-cli)
+    * [Networking](#networking)
+    * [Compute Instances](#compute-instances)
+    * [Machine Database](#machine-database)
+    * [SSH Access](#ssh-access)
+    * [Hosts File](#hosts-file)
+  * [Terraform](#terraform)
   * [Connecting to Jumpbox](#connecting-to-jumpbox)
 * **Original Guide** [Labs](https://github.com/kelseyhightower/kubernetes-the-hard-way/tree/52eb26dad1a3e9e8083a899bc854421eb4842a73#labs)
 * [Cleaning Up](#cleaning-up)
-  * [Networking Clean Up](#networking-clean-up)
-  * [Compute Instances Clean Up](#compute-instances-clean-up)
+  * [AWS CLI Clean Up](#aws-cli-clean-up)
+    * [Networking Clean Up](#networking-clean-up)
+    * [Compute Instances Clean Up](#compute-instances-clean-up)
+  * [Terraform Clean Up](#terraform-clean-up)
 
 ## Prerequisites
 
@@ -44,7 +48,12 @@ Details how to configure AWS CLI are available in
 Check out [the guide](https://github.com/kelseyhightower/kubernetes-the-hard-way/blob/52eb26dad1a3e9e8083a899bc854421eb4842a73/docs/01-prerequisites.md)
 to see the EC2 instance requirements.
 
-### Networking
+### AWS CLI
+
+The following subsections provide the commands to provision VPC, EC2 and prepare
+them to execute commands from the orginal tutorial.
+
+#### Networking
 
 ```sh
 # Create VPC:
@@ -130,7 +139,7 @@ Output:
 +------------+-------------+-----------+-----------------+------------+
 ```
 
-### Compute Instances
+#### Compute Instances
 
 ```sh
 # Create SSH key pair:
@@ -208,7 +217,7 @@ Output:
 +---------+-------------+-----------------+----------------+------------------+------------+
 ```
 
-### Machine Database
+#### Machine Database
 
 On your workstation (not jumpbox) run the following commands to create and copy
 `machines.txt`. The commands below generate the file that is described in
@@ -243,7 +252,7 @@ scp -i ./kubernetes-the-hard-way.id_rsa machines.txt admin@$JUMPBOX_IP:/home/adm
 ssh -i ./kubernetes-the-hard-way.id_rsa admin@$JUMPBOX_IP "sudo mv /home/admin/machines.txt /root/"
 ```
 
-### SSH Access
+#### SSH Access
 
 To enable root SSH access on `server`, `node-0` and `node-1`, and the SSH
 connectivity from `jumpbox` to these servers, run the following commands on
@@ -269,7 +278,7 @@ done
 scp -i ./kubernetes-the-hard-way.id_rsa ./kubernetes-the-hard-way.id_rsa root@$JUMPBOX_IP:/root/.ssh/id_rsa
 ```
 
-### Hosts File
+#### Hosts File
 
 AWS EC2 instances `/etc/hosts` do not have an entry for `127.0.1.1` loopback
 address referenced in the guide. Let's fix it.
@@ -284,6 +293,19 @@ for ip in ${MACHINES_IPS[@]}; do
 done
 ```
 
+### Terraform
+
+If you prefer a "no hard way" and you have Terraform installed, as an
+alternative to running the AWS CLI commands above you can run the Terraform
+configuration files:
+
+```sh
+cd terraform
+terraform init
+terraform apply
+JUMPBOX_IP=$(terraform output -raw jumpbox_ip)
+```
+
 ### Connecting to Jumpbox
 
 To connect to `jumpbox` as `root` run the following command:
@@ -294,7 +316,11 @@ ssh -i ./kubernetes-the-hard-way.id_rsa -o SetEnv='LC_ALL=C.UTF-8 LANG=C.UTF-8' 
 
 ## Cleaning Up
 
-### Compute Instances Clean Up
+### AWS CLI Clean Up
+
+The following subsections provide the commands to clean-up EC2, and VPC.
+
+#### Compute Instances Clean Up
 
 ```sh
 INSTANCE_IDS=($(aws ec2 describe-instances \
@@ -313,7 +339,7 @@ aws ec2 wait instance-terminated \
   --instance-ids ${INSTANCE_IDS[@]}
 ```
 
-### Networking Clean Up
+#### Networking Clean Up
 
 ```sh
 # Delete security group:
@@ -379,4 +405,14 @@ aws resourcegroupstaggingapi get-resources \
 aws ec2 describe-instances \
   --query "Reservations[].Instances[].{InstanceId:InstanceId, Name:Tags[?Key=='Name']|[0].Value, State:State.Name}" \
   --output table
+```
+
+### Terraform Clean Up
+
+If you provisioned the guide resources with Terraform, run the following
+command to clean them up:
+
+```sh
+cd terraform
+terraform destroy
 ```
