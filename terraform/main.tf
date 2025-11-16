@@ -165,7 +165,10 @@ resource "terraform_data" "jumpbox_files" {
 
   provisioner "remote-exec" {
     inline = [
-      "chmod 0600 /root/.ssh/id_rsa"
+      "chmod 0600 /root/.ssh/id_rsa",
+      "sed -i 's/^127.0.1.1.*/127.0.1.1\tjumpbox/' /etc/hosts",
+      "hostnamectl set-hostname jumpbox",
+      "systemctl restart systemd-hostnamed"
     ]
   }
 }

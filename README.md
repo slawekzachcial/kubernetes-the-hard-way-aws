@@ -284,13 +284,20 @@ AWS EC2 instances `/etc/hosts` do not have an entry for `127.0.1.1` loopback
 address referenced in the guide. Let's fix it.
 
 ```sh
-for ip in ${MACHINES_IPS[@]}; do
+for ip in $JUMPBOX_IP ${MACHINES_IPS[@]}; do
   ssh -i ./kubernetes-the-hard-way.id_rsa \
     -o StrictHostKeyChecking=no \
     -o UserKnownHostsFile=/dev/null \
-    admin@$ip \
+    root@$ip \
     "grep -q '127.0.1.1' /etc/hosts || echo '127.0.1.1 localhost' | sudo tee -a /etc/hosts"
 done
+ssh -i ./kubernetes-the-hard-way.id_rsa \
+  -o StrictHostKeyChecking=no \
+  -o UserKnownHostsFile=/dev/null \
+  root@$JUMPBOX_IP \
+  "sed -i 's/^127.0.1.1.*/127.0.1.1\tjumpbox/' /etc/hosts \
+  && hostnamectl set-hostname jumpbox \
+  && systemctl restart systemd-hostnamed"
 ```
 
 ### Terraform
